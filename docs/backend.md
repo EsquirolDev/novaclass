@@ -19,7 +19,7 @@ El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo l
 
 ## Cuentas
 
-Ahora mismo están **apagadas** (`VITE_AUTH` sin poner): la app se abre sin login y con la clase de ejemplo. Se encienden con `VITE_AUTH=on` cuando el backend esté completo.
+Encendidas. `VITE_AUTH=off` las apaga: la app se abre sin login y con la clase de ejemplo. Dentro de la app, los datos siguen siendo los de ejemplo hasta conectar el store a PocketBase.
 
 - **Registro y entrada:** con correo y contraseña (mínimo 8 caracteres, la regla de PocketBase), desde `#/registro` y `#/entrar`. Al crear la cuenta se entra directamente.
 - **Sesión:** PocketBase guarda el token en `localStorage` y se renueva al abrir la app.

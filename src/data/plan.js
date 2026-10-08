@@ -116,7 +116,7 @@ export const PLAN = [
         id: 'login',
         title: 'Registro e inicio de sesión',
         detail:
-          'Hecho y apagado (VITE_AUTH=on lo enciende): crear cuenta, entrar, salir y pedir el enlace de recuperación. Falta: encenderlo cuando el backend esté completo, configurar el correo (SMTP) y verificar el correo al registrarse.',
+          'Hecho y encendido (VITE_AUTH=off lo apaga): crear cuenta, entrar, salir y pedir el enlace de recuperación. Falta: configurar el correo (SMTP) y verificar el correo al registrarse.',
       },
       {
         id: 'grupo',
