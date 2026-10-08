@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { myRole, toEvents, toHorario, toTemas } from '../lib/claseData.js'
+import { setSubjects } from '../data/subjects.js'
+import { myRole, toEvents, toHorario, toPeople, toSubjects, toTemas } from '../lib/claseData.js'
 import { AUTH_ON } from '../lib/flags.js'
 import { pb } from '../lib/pb.js'
 import { setHorario } from '../lib/schedule.js'
@@ -8,14 +9,15 @@ import { loadQa, useDudasPb } from './dudasPb.js'
 import { useAuth } from './auth.jsx'
 
 /*
- * La clase que se está viendo. Con sesión, sale de PocketBase: las clases que la persona puede ver (las suyas y, si es
- * Director, las de su escuela), la elegida y sus datos (horario, temas, entregas y exámenes con lo que ha marcado).
- * Sin login (VITE_AUTH=off) o con «ver una clase de ejemplo», la de seed.js.
+ * El curso que se está viendo (docs/escuelas.md). Con sesión, sale de PocketBase: los cursos de la persona (el suyo si
+ * es Estudiante; donde da clase o es Tutor si es Docente; todos los de la escuela si es de la dirección), el elegido y
+ * sus datos: asignaturas, horario, temas, entregas y exámenes con lo que ha marcado, festivos, dudas y apuntes.
+ * Sin login (VITE_AUTH=off), la clase de ejemplo de seed.js.
  *
- * status: 'demo' | 'loading' | 'none' (no está en ninguna clase) | 'error' | 'ready'
+ * status: 'demo' | 'loading' | 'none' (no está en ningún curso) | 'error' | 'ready'
  */
 const Ctx = createContext(null)
-const KEY = 'novaclass:clase'
+const KEY = 'novaclass:curso'
 
 function remembered() {
   try {
@@ -25,28 +27,57 @@ function remembered() {
   }
 }
 
-async function loadClase(group, userId) {
-  const inGroup = pb.filter('group = {:g}', { g: group.id })
-  const [schedule, memberships, topics, events, statuses, staff, modules, qa, apuntesRaw] = await Promise.all([
-    pb.collection('schedule').getFullList({ filter: inGroup, expand: 'module' }),
-    pb.collection('memberships').getFullList({ filter: inGroup, expand: 'user' }),
-    pb.collection('topics').getFullList({ filter: inGroup, expand: 'module', sort: 'order' }),
-    pb.collection('events').getFullList({ filter: inGroup, expand: 'module', sort: 'date,time' }),
-    pb.collection('event_status').getFullList({ filter: pb.filter('user = {:u} && event.group = {:g}', { u: userId, g: group.id }) }),
-    pb.collection('school_staff').getFullList({ filter: pb.filter('school = {:s} && user = {:u}', { s: group.school, u: userId }) }),
-    pb.collection('modules').getFullList({ fields: 'id,key' }),
-    loadQa(group.id),
-    loadApuntes(group.id),
+/* Los cursos que le tocan a la persona y si es de la dirección de su escuela */
+async function loadCursos(user) {
+  const [cursos, mine, teaching, staff] = await Promise.all([
+    pb.collection('cursos').getFullList({ expand: 'school,tutor', sort: 'name' }),
+    pb.collection('curso_alumnos').getFullList({ filter: pb.filter('user = {:u} && baja = false', { u: user.id }), fields: 'curso' }),
+    pb.collection('asignaturas').getFullList({ filter: pb.filter('docentes.id ?= {:u}', { u: user.id }), fields: 'curso' }),
+    pb.collection('school_staff').getFullList({ filter: pb.filter('user = {:u}', { u: user.id }), fields: 'school' }),
   ])
+  const staffOf = new Set(staff.map(x => x.school))
+  const ids = new Set([...mine.map(x => x.curso), ...teaching.map(x => x.curso)])
   return {
-    horario: toHorario(group, schedule, memberships),
+    cursos: cursos.filter(c => staffOf.has(c.school) || ids.has(c.id) || c.tutor === user.id),
+    staffOf,
+  }
+}
+
+async function loadCurso(curso, user, isStaff) {
+  const inCurso = pb.filter('curso = {:c}', { c: curso.id })
+  const byCurso = pb.filter('asignatura.curso = {:c}', { c: curso.id })
+  const [asignaturas, horario, alumnos, inscripciones, topics, events, statuses, festivos, qa, apuntesRaw] = await Promise.all([
+    pb.collection('asignaturas').getFullList({ filter: inCurso, expand: 'docentes', sort: 'created' }),
+    pb.collection('horario').getFullList({ filter: inCurso, expand: 'docente' }),
+    pb.collection('curso_alumnos').getFullList({ filter: inCurso, expand: 'user' }),
+    pb
+      .collection('inscripciones')
+      .getFullList({ filter: pb.filter('user = {:u} && asignatura.curso = {:c}', { u: user.id, c: curso.id }) }),
+    pb.collection('topics').getFullList({ filter: byCurso, sort: 'order' }),
+    pb.collection('events').getFullList({ filter: byCurso, sort: 'date,time' }),
+    pb
+      .collection('event_status')
+      .getFullList({ filter: pb.filter('user = {:u} && event.asignatura.curso = {:c}', { u: user.id, c: curso.id }) }),
+    pb.collection('festivos').getFullList({ filter: pb.filter('school = {:s}', { s: curso.school }), sort: 'date' }),
+    loadQa(curso.id),
+    loadApuntes(curso.id),
+  ])
+  const subjects = toSubjects(asignaturas, { uid: user.id, inscritas: inscripciones.map(i => i.asignatura), staff: isStaff })
+  return {
+    asignaturas,
+    subjects,
+    /* Estudiantes: asignaturas con espacio abierto en las que aún no han entrado (se entra con su código) */
+    locked: user.role === 'estudiante' ? asignaturas.filter(a => a.activa && !subjects.find(x => x.id === a.id).active).map(a => a.id) : [],
+    horario: toHorario(curso, horario),
     temas: toTemas(topics),
-    events: toEvents(events, statuses),
+    events: toEvents(events, statuses, festivos),
+    festivos,
     /* id del registro de event_status de cada evento, para actualizarlo en vez de crear otro */
     statusIds: Object.fromEntries(statuses.map(s => [s.event, s.id])),
-    me: myRole(memberships, userId, staff.length > 0),
-    members: memberships,
-    moduleIds: Object.fromEntries(modules.map(m => [m.key, m.id])),
+    me: myRole(user, curso, alumnos, isStaff),
+    people: toPeople(curso, asignaturas, alumnos),
+    /* Docentes del curso: sus respuestas en las dudas llevan la marca de Docente */
+    teachers: [...new Set(asignaturas.flatMap(a => a.docentes || []))],
     /* Dudas, respuestas y votos en crudo (src/state/dudasPb.js) y apuntes (src/state/apuntesPb.js) */
     qa,
     apuntesRaw,
@@ -56,10 +87,11 @@ async function loadClase(group, userId) {
 export function ClaseProvider({ children }) {
   const { user } = useAuth()
   const uid = user?.id
-  const [demo, setDemo] = useState(false)
+  const userRef = useRef(user)
+  userRef.current = user
   const [current, setCurrent] = useState(remembered)
   const [reload, setReload] = useState(0)
-  const [state, setState] = useState({ status: AUTH_ON ? 'loading' : 'demo', classes: [] })
+  const [state, setState] = useState({ status: AUTH_ON ? 'loading' : 'demo', cursos: [] })
   const [saveError, setSaveError] = useState(null)
   /* Para guardar «hecha» y nota: ids de event_status, una cola por evento y cuántos cambios quedan por confirmar */
   const statusIds = useRef({})
@@ -69,29 +101,33 @@ export function ClaseProvider({ children }) {
   eventsRef.current = state.events || []
 
   useEffect(() => {
-    if (!AUTH_ON || !uid || demo) {
+    if (!AUTH_ON || !uid) {
       setHorario()
-      setState({ status: 'demo', classes: [] })
+      setSubjects()
+      setState({ status: 'demo', cursos: [] })
       return undefined
     }
     let cancelled = false
     setState(s => ({ ...s, status: 'loading' }))
     ;(async () => {
       try {
-        const classes = await pb.collection('groups').getFullList({ expand: 'school', sort: 'name' })
+        const me = userRef.current
+        const { cursos, staffOf } = await loadCursos(me)
         if (cancelled) return
-        if (!classes.length) {
+        if (!cursos.length) {
           setHorario()
-          setState({ status: 'none', classes })
+          setSubjects([])
+          setState({ status: 'none', cursos })
           return
         }
-        const group = classes.find(g => g.id === current) || classes[0]
-        const data = await loadClase(group, uid)
+        const curso = cursos.find(c => c.id === current) || cursos[0]
+        const data = await loadCurso(curso, me, staffOf.has(curso.school))
         if (cancelled) return
-        /* El horario es un módulo compartido: se cambia antes de pintar la clase nueva */
+        /* Horario y asignaturas son módulos compartidos: se cambian antes de pintar el curso nuevo */
         setHorario(data.horario)
+        setSubjects(data.subjects)
         statusIds.current = data.statusIds
-        setState({ status: 'ready', classes, group, school: group.expand?.school || null, ...data })
+        setState({ status: 'ready', cursos, curso, school: curso.expand?.school || null, ...data })
       } catch (error) {
         if (!cancelled) setState(s => ({ ...s, status: 'error', error }))
       }
@@ -99,7 +135,7 @@ export function ClaseProvider({ children }) {
     return () => {
       cancelled = true
     }
-  }, [uid, demo, current, reload])
+  }, [uid, current, reload])
 
   /* Cambia «hecha» o la nota de un evento en pantalla (sin esperar al servidor) */
   const patchEvent = useCallback((eventId, patch) => {
@@ -147,9 +183,11 @@ export function ClaseProvider({ children }) {
   )
 
   /* Tiempo real: lo marcado desde otro dispositivo y las entregas que publican Docentes, Delegado o Subdelegado */
-  const groupId = state.status === 'ready' ? state.group.id : null
+  const cursoId = state.status === 'ready' ? state.curso.id : null
+  const stateRef = useRef(state)
+  stateRef.current = state
   useEffect(() => {
-    if (!groupId) return undefined
+    if (!cursoId) return undefined
     let alive = true
     const offs = []
     const keep = off => (alive ? offs.push(off) : off())
@@ -165,28 +203,24 @@ export function ClaseProvider({ children }) {
       })
       .then(keep, () => {})
     pb.collection('events')
-      .subscribe(
-        '*',
-        ({ action, record }) => {
-          if (record.group !== groupId) return
-          setState(s => {
-            if (s.status !== 'ready' || s.group.id !== groupId) return s
-            const rest = s.events.filter(e => e.id !== record.id)
-            if (action === 'delete') return { ...s, events: rest }
-            const old = s.events.find(e => e.id === record.id)
-            const [fresh] = toEvents([record])
-            const next = { ...fresh, done: old?.done || false, grade: old?.grade }
-            return { ...s, events: [...rest, next].sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || ''))) }
-          })
-        },
-        { expand: 'module' },
-      )
+      .subscribe('*', ({ action, record }) => {
+        if (!stateRef.current.asignaturas?.some(a => a.id === record.asignatura)) return
+        setState(s => {
+          if (s.status !== 'ready' || s.curso.id !== cursoId) return s
+          const rest = s.events.filter(e => e.id !== record.id)
+          if (action === 'delete') return { ...s, events: rest }
+          const old = s.events.find(e => e.id === record.id)
+          const [fresh] = toEvents([record])
+          const next = { ...fresh, done: old?.done || false, grade: old?.grade }
+          return { ...s, events: [...rest, next].sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || ''))) }
+        })
+      })
       .then(keep, () => {})
     return () => {
       alive = false
       offs.forEach(off => off())
     }
-  }, [groupId, patchEvent])
+  }, [cursoId, patchEvent])
 
   const qaActions = useDudasPb({ state, setState, uid, setSaveError })
   const apActions = useApuntesPb({ state, setState, uid })
@@ -196,40 +230,36 @@ export function ClaseProvider({ children }) {
       ...state,
       qaActions,
       apActions,
-      demo,
       saveStatus,
       saveError,
       clearSaveError: () => setSaveError(null),
-      /* Cambiar de clase (si se está en varias); se recuerda para la próxima vez */
+      /* Cambiar de curso (Docentes y dirección pueden tener varios); se recuerda para la próxima vez */
       select: id => {
         setCurrent(id)
         try {
           localStorage.setItem(KEY, id)
         } catch {
-          /* sin almacenamiento: se elige la primera al volver */
+          /* sin almacenamiento: se elige el primero al volver */
         }
       },
       retry: () => setReload(n => n + 1),
-      /* Unirse con el código de una clase: entra como Estudiante y pasa a verla */
+      /* Entrar en el espacio de una asignatura con su código: se recarga el curso para verla */
       join: async code => {
         const res = await pb.send('/api/novaclass/unirse', { method: 'POST', body: { code } })
-        setDemo(false)
-        setCurrent(res.group)
+        setCurrent(res.curso)
         try {
-          localStorage.setItem(KEY, res.group)
+          localStorage.setItem(KEY, res.curso)
         } catch {
           /* sin almacenamiento */
         }
         setReload(n => n + 1)
         return res
       },
-      /* Código de la clase (Tutor y dirección) y cambiarlo por uno nuevo */
-      getCode: id => pb.send(`/api/novaclass/clases/${id}/codigo`, { method: 'GET' }).then(r => r.code),
-      newCode: id => pb.send(`/api/novaclass/clases/${id}/codigo`, { method: 'POST' }).then(r => r.code),
-      /* «Ver una clase de ejemplo» desde la pantalla de sin clase; false para volver */
-      showDemo: on => setDemo(on),
+      /* Código de una asignatura (sus Docentes y la dirección) y cambiarlo por uno nuevo */
+      getCode: id => pb.send(`/api/novaclass/asignaturas/${id}/codigo`, { method: 'GET' }).then(r => r.code),
+      newCode: id => pb.send(`/api/novaclass/asignaturas/${id}/codigo`, { method: 'POST' }).then(r => r.code),
     }),
-    [state, demo, saveStatus, saveError, qaActions, apActions],
+    [state, saveStatus, saveError, qaActions, apActions],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -1,5 +1,5 @@
 import { Button, Countdown, EmptyState, Hero, Icon, ListRow, SectionTitle, Sigil, SubjectTag } from '../components/index.js'
-import { SUBJECTS } from '../data/subjects.js'
+import { SUBJECT_ORDER, SUBJECTS } from '../data/subjects.js'
 import { countdown, mediumDate, relative, shortDate, todayLong, todayShort } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
 import { nextUp, weekDays } from '../state/selectors.js'
@@ -32,9 +32,11 @@ export default function Inicio() {
           <h1 className="na-t-display-xl nc-only-desktop">{todayLong(now)}</h1>
           <h1 className="na-t-display-xl nc-only-mobile">{todayShort(now)}</h1>
           <p className="na-t-subtitle nc-greet-summary">{weekSummary(week)}</p>
-          {clase.group ? (
+          {clase.curso ? (
             <p className="na-t-label na-muted nc-greet-class">
-              {clase.group.name} · {clase.school?.name}
+              <a href={href('/clase')}>
+                {clase.curso.name} · {clase.school?.name}
+              </a>
               {clase.school?.verified ? <Icon name="shield" size={15} label="Escuela verificada" /> : null}
             </p>
           ) : null}
@@ -136,7 +138,7 @@ function Welcome({ onClose }) {
           <p>
             <b>Cada asignatura tiene su color y su forma</b>, y la verás igual en toda la app:{' '}
             <span className="nc-legend-inline">
-              {['pro', 'bd', 'lm', 'si', 'ed'].map(k => (
+              {SUBJECT_ORDER.map(k => (
                 <SubjectTag key={k} subject={k} />
               ))}
             </span>

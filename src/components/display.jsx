@@ -1,4 +1,4 @@
-import { SUBJECTS, subjectVars } from '../data/subjects.js'
+import { subjectOf, subjectVars, UNKNOWN } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { href } from '../lib/router.jsx'
 import { Icon } from './Icon.jsx'
@@ -22,7 +22,7 @@ export function Card({ subject, tab, title, titleAs, action, children, className
     </Tag>
   )
   if (!subject) return card
-  const s = SUBJECTS[subject]
+  const s = subjectOf(subject) || UNKNOWN
   return (
     <div className={cx('na-folder', className)} style={subjectVars(s.id)}>
       <div className="na-folder-tab">
@@ -39,7 +39,7 @@ export function Card({ subject, tab, title, titleAs, action, children, className
 
 /* Bloque sólido del color de la asignatura. Uno por pantalla. */
 export function Hero({ subject, label, className, children }) {
-  const s = SUBJECTS[subject] || SUBJECTS.pro
+  const s = subjectOf(subject) || UNKNOWN
   return (
     <section className={cx('na-hero', className)} style={subjectVars(s.id)} aria-label={label}>
       <svg className="na-hero-deco" viewBox="0 0 16 16" aria-hidden="true">
@@ -71,7 +71,7 @@ export function ProgressSegments({ done = 0, total = 1, subject, label, noun = '
         aria-valuemin={0}
         aria-valuemax={total}
         aria-valuenow={done}
-        aria-label={(ariaLabel || (subject ? SUBJECTS[subject].name + ': ' : '')) + `${done} de ${total} ${noun} hechas`}
+        aria-label={(ariaLabel || (subject ? (subjectOf(subject)?.name || '') + ': ' : '')) + `${done} de ${total} ${noun} hechas`}
       >
         {useBar ? (
           <span className="na-progress-fill" style={{ width: (done / total) * 100 + '%' }} />
@@ -102,7 +102,7 @@ export function ListRow({ leading, title, meta, trailing, done, subject, as, cla
 
 /* Chip de evento: entrega (tinte suave) vs examen (relleno sólido + bandera) */
 export function EventChip({ type = 'entrega', subject, title, time, done, compact, selected, onClick, className }) {
-  const s = SUBJECTS[subject]
+  const s = subjectOf(subject)
   const isExam = type === 'examen'
   const isHoliday = type === 'festivo'
   const Tag = onClick ? 'button' : 'div'

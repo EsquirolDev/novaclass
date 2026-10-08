@@ -136,7 +136,7 @@ export default function Apuntes() {
           </div>
         </main>
         <aside className="nc-side nc-side--sticky">
-          <UploadCard onPublish={addApunte} />
+          {SUBJECT_ORDER.length ? <UploadCard onPublish={addApunte} /> : null}
           <Card title="Los más usados">
             <div className="na-list">
               {top.map((r, i) => (
@@ -164,7 +164,7 @@ export default function Apuntes() {
 function UploadCard({ onPublish }) {
   const fileRef = useRef(null)
   const [upType, setUpType] = useState('pdf')
-  const [upSubj, setUpSubj] = useState('bd')
+  const [upSubj, setUpSubj] = useState(SUBJECT_ORDER[0] || '')
   const [tema, setTema] = useState(0)
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')

@@ -85,7 +85,7 @@ function PrivateApp({ path }) {
       <OfflineBanner />
       <DemoNotice />
       <SaveError />
-      {/* Mientras carga la clase, el esqueleto; sin clase, la pantalla que lo explica; si falla, reintentar */}
+      {/* Mientras carga el curso, el esqueleto; sin curso, la pantalla que lo explica; si falla, reintentar */}
       {clase.status === 'loading' ? (
         <LoadingState label="Cargando tu clase…" />
       ) : clase.status === 'none' ? (
@@ -147,7 +147,7 @@ function skipToMain() {
   main.focus()
 }
 
-/* Hasta conectar el store a PocketBase, lo que se ve dentro es una clase de ejemplo: se dice, y se puede cerrar */
+/* Sin login (VITE_AUTH=off), lo que se ve es una clase de ejemplo: se dice, y se puede cerrar */
 function DemoNotice() {
   const clase = useClase()
   const [hidden, setHidden] = useState(() => {
@@ -157,7 +157,6 @@ function DemoNotice() {
       return false
     }
   })
-  /* Con la clase real ya no hay nada de ejemplo: el aviso solo sale en el modo de ejemplo */
   if (hidden || clase.status !== 'demo') return null
   function hide() {
     setHidden(true)
@@ -169,19 +168,7 @@ function DemoNotice() {
   }
   return (
     <aside className="nc-demo" aria-label="Aviso">
-      <span>
-        Estás viendo una clase de ejemplo.
-        {clase.demo ? (
-          <>
-            {' '}
-            <button type="button" className="nc-demo-link" onClick={() => clase.showDemo(false)}>
-              Salir del ejemplo
-            </button>
-          </>
-        ) : (
-          ' Muy pronto podrás unirte a la tuya con su código.'
-        )}
-      </span>
+      <span>Estás viendo una clase de ejemplo.</span>
       <button type="button" aria-label="Cerrar aviso" onClick={hide}>
         ×
       </button>

@@ -1,4 +1,4 @@
-import { SUBJECTS, subjectOf, subjectVars } from '../data/subjects.js'
+import { subjectOf, subjectVars, UNKNOWN } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 
 /* La forma de cada asignatura. Nunca el color solo: forma + código siempre juntos. */
@@ -15,8 +15,8 @@ export function ShapeEl({ shape, ...extra }) {
 }
 
 export function Sigil({ subject, size = 12, variant, tone, label, strokeWidth, className, style }) {
-  const s = subjectOf(subject) || SUBJECTS.pro
-  const color = tone === 'current' ? 'currentColor' : `var(--${s.id})`
+  const s = subjectOf(subject) || UNKNOWN
+  const color = tone === 'current' ? 'currentColor' : `var(--${s.color})`
   const paint =
     variant === 'outline'
       ? { fill: 'none', stroke: color, strokeWidth: strokeWidth || (16 / size) * 1.2 }
@@ -39,7 +39,7 @@ export function Sigil({ subject, size = 12, variant, tone, label, strokeWidth, c
 
 /* Etiqueta de asignatura (no interactiva) */
 export function SubjectTag({ subject, variant = 'soft', size, showName, className }) {
-  const s = subjectOf(subject) || SUBJECTS.pro
+  const s = subjectOf(subject) || UNKNOWN
   return (
     <span
       className={cx('na-tag', `na-tag--${variant}`, size === 'lg' && 'na-tag--lg', className)}

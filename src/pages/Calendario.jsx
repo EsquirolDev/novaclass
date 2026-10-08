@@ -82,7 +82,7 @@ function CalendarioEscritorio() {
   const mon = startOfWeek(ref)
   const sun = addDays(mon, 6)
   const title = horario
-    ? `Horario de ${clase.group?.name || '1.º DAW'}`
+    ? `Horario de ${clase.curso?.name || '1.º DAW'}`
     : view === 'mes'
       ? monthTitle(ref)
       : `Semana del ${mon.getDate()}${mon.getMonth() !== sun.getMonth() ? ' ' + MONTHS_SHORT[mon.getMonth()] : ''} al ${sun.getDate()} ${MONTHS_SHORT[sun.getMonth()]}`
@@ -124,13 +124,13 @@ function CalendarioEscritorio() {
             {view === 'mes' ? (
               <div className="nc-legend nc-only-desktop" aria-hidden="true">
                 <span>
-                  <span className="na-chip na-chip--entrega" style={subjectVars('pro')}>
-                    <Sigil subject="pro" size={10} tone="current" />
+                  <span className="na-chip na-chip--entrega" style={subjectVars(MODULE_ORDER[0])}>
+                    <Sigil subject={MODULE_ORDER[0]} size={10} tone="current" />
                     Entrega
                   </span>
                 </span>
                 <span>
-                  <span className="na-chip na-chip--examen" style={subjectVars('pro')}>
+                  <span className="na-chip na-chip--examen" style={subjectVars(MODULE_ORDER[0])}>
                     <Icon name="flag" size={13} strokeWidth={2.4} />
                     Examen
                   </span>

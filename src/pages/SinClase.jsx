@@ -1,12 +1,14 @@
-import { Button, Icon, JoinForm } from '../components/index.js'
+import { Button, Icon } from '../components/index.js'
 import { firstName } from '../lib/users.js'
 import { useAuth } from '../state/auth.jsx'
-import { useClase } from '../state/clase.jsx'
 
-/* Con sesión pero sin ninguna clase: qué pasa y qué hacer mientras tanto */
+/*
+ * Con sesión pero sin ningún curso: las cuentas y los cursos los pone la escuela (docs/escuelas.md), así que aquí solo
+ * se explica a quién pedirlo.
+ */
 export default function SinClase() {
   const { user, logout } = useAuth()
-  const { showDemo } = useClase()
+  const docente = user?.role === 'docente'
   return (
     <div className="nc-screen">
       <main className="nc-pad nc-state-page">
@@ -15,14 +17,16 @@ export default function SinClase() {
             <Icon name="school" size={26} />
           </span>
           <div className="nc-state-text">
-            <h1 className="t">Hola, {firstName(user)}. Aún no estás en ninguna clase</h1>
-            <p className="d">Escribe el código de tu clase para entrar. O pide a tu Tutor o a la dirección de tu escuela que te añadan.</p>
+            <h1 className="t">
+              Hola, {firstName(user)}. Aún no tienes {docente ? 'ninguna asignatura' : 'curso'}
+            </h1>
+            <p className="d">
+              {docente
+                ? 'Cuando la dirección de tu escuela te ponga en el horario de un curso, lo verás aquí.'
+                : 'La dirección de tu escuela te pondrá en tu curso. Si crees que ya debería estar, pregunta a tu Tutor o en secretaría.'}
+            </p>
           </div>
-          <JoinForm autoFocus />
           <div className="nc-state-actions">
-            <Button variant="secondary" icon="calendar" onClick={() => showDemo(true)}>
-              Ver una clase de ejemplo
-            </Button>
             <Button variant="secondary" icon="logout" onClick={logout}>
               Cerrar sesión
             </Button>

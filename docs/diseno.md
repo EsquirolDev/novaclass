@@ -1,11 +1,11 @@
 # Sistema de diseño de NovaClass
 
-Organizador de clase para 1.º de DAW: entregas, exámenes, apuntes compartidos y dudas. La idea central es **color por asignatura**: cada módulo tiene un color, una forma y un código, y los tres aparecen juntos en todas partes (tarjetas, calendario, dudas, apuntes) para orientarse de un vistazo.
+Organizador de clase para 1.º de DAW: entregas, exámenes, apuntes compartidos y dudas. La idea central es **color por asignatura**: cada asignatura tiene un color, una forma y un código, y los tres aparecen juntos en todas partes (tarjetas, calendario, dudas, apuntes) para orientarse de un vistazo.
 
 ## Principios
 
-- **El color es de las asignaturas.** Nada más en la interfaz usa los colores `pro`, `bd`, `lm`, `si`, `ed` ni los de los módulos de horario `digi`, `cpfw`, `ipo`. Los avatares, los botones y los estados son neutros o usan `accent`.
-- **Nunca el color solo.** Cada asignatura lleva siempre su sigilo (forma) y su código: PRO ● círculo, BD ■ cuadrado, LMSGI ▲ triángulo, SI ◆ rombo, ED ⬢ hexágono. Los módulos que solo salen en el horario (sin entregas ni apuntes) también tienen los tres: DIGI ⬟ pentágono, CPFW ★ estrella, IPO ✚ cruz. Entrega y examen se distinguen por relleno, icono y palabra, no por tono.
+- **El color es de las asignaturas.** Nada más en la interfaz usa los colores de la paleta de asignaturas (`azul`, `naranja`, `violeta`, `verde`, `amarillo`, `cian`, `rosa`, `lima`). Los avatares, los botones y los estados son neutros o usan `accent`. Cada escuela elige color y forma para cada asignatura de esa paleta (ver `docs/escuelas.md`).
+- **Nunca el color solo.** Cada asignatura lleva siempre su sigilo (forma) y su código. En Sant Josep Obrer: PRO ● círculo azul, BD ■ cuadrado naranja, LMSGI ▲ triángulo violeta, SI ◆ rombo verde, ED ⬢ hexágono amarillo, DIGI ⬟ pentágono cian, CPFW ★ estrella rosa, IPO ✚ cruz lima. Las que solo salen en el horario (sin espacio abierto) también tienen los tres. Entrega y examen se distinguen por relleno, icono y palabra, no por tono.
 - **Carpetas, no bordes laterales.** Lo que pertenece a un módulo va en `Card subject`: pestaña de archivador con sigilo + código y borde superior del color.
 - **Seleccionado = invertido.** Pill, pestaña y día de hoy usan fondo `ink` y texto `bg`. Es la única forma de marcar selección.
 - **Herramienta diaria, no landing.** Un único bloque de color sólido por pantalla (`Hero`), el resto sobre superficies neutras.
@@ -66,7 +66,7 @@ Sigue el patrón de las apps de calendario, no la pantalla de escritorio en pequ
 - Variables: `src/styles/tokens.css` (Oscuro en `:root`, Claro con `data-theme="light"`). La referencia con la nota de uso de cada token y los contrastes está en `docs/tokens.json`; si cambias un valor, cámbialo en los dos.
 - Componentes: funciones de React en `src/components/` con clases `na-*` en `src/styles/components.css`, que solo leen variables. Las pantallas usan clases `nc-*` en `src/styles/app.css`.
 - El color de asignatura se pasa con `subjectVars(id)` (variables `--s`, `--s-soft`, `--s-on`), así un mismo componente sirve para todos los módulos.
-- `SUBJECT_ORDER` son las cinco asignaturas con entregas (Dudas, Apuntes, página de asignatura). `OTHER_ORDER` son los módulos solo de horario (`digi`, `cpfw`, `ipo`); `subjectOf(id)` devuelve cualquiera de los dos (`src/data/subjects.js`).
+- `src/data/subjects.js` guarda las asignaturas del curso cargado (`setSubjects`): `SUBJECT_ORDER` son las que tienen espacio (Dudas, Apuntes, página de asignatura) y `OTHER_ORDER` las que solo salen en el horario; `subjectOf(id)` devuelve cualquiera de las dos. Cada una lleva `color` (variables `--azul`, `--azul-soft`, `--on-azul`…) y `shape`.
 - Los arreglos visuales se comprueban con capturas ampliadas (10x y con zoom del navegador), no a ojo: la pestaña de carpeta ya dio problemas de píxeles con posiciones decimales.
 
 Se creó como artifact de sistema de diseño («Ciclo») el 7 de octubre de 2026 y se trajo aquí el 8 de octubre de 2026. Desde entonces el código es la fuente de verdad.

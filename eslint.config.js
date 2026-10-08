@@ -41,6 +41,7 @@ export default [
         SelectField: 'readonly',
         RelationField: 'readonly',
         TextField: 'readonly',
+        BoolField: 'readonly',
         NumberField: 'readonly',
         routerAdd: 'readonly',
         $apis: 'readonly',

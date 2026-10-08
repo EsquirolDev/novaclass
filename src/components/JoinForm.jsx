@@ -1,10 +1,11 @@
 import { useId, useState } from 'react'
 import { formatCode } from '../lib/codes.js'
+import { navigate } from '../lib/router.jsx'
 import { useClase } from '../state/clase.jsx'
 import { Button } from './controls.jsx'
 import { Icon } from './Icon.jsx'
 
-/* Escribir el código de una clase y entrar en ella como Estudiante */
+/* Escribir el código de una asignatura y entrar en su espacio (entregas, apuntes y dudas); luego se va a ella */
 export function JoinForm({ onJoined, autoFocus }) {
   const { join } = useClase()
   const id = useId()
@@ -20,10 +21,11 @@ export function JoinForm({ onJoined, autoFocus }) {
     setError(null)
     try {
       const res = await join(raw)
-      onJoined?.(res)
+      if (onJoined) onJoined(res)
+      else navigate('/asignaturas/' + res.asignatura)
     } catch (err) {
       setError(
-        err?.status === 0 ? 'No se puede conectar con el servidor.' : err?.response?.message || 'No se ha podido entrar en la clase.',
+        err?.status === 0 ? 'No se puede conectar con el servidor.' : err?.response?.message || 'No se ha podido entrar en la asignatura.',
       )
       setBusy(false)
     }
@@ -31,7 +33,7 @@ export function JoinForm({ onJoined, autoFocus }) {
 
   return (
     <form className="nc-join" onSubmit={submit} noValidate>
-      <label htmlFor={id}>Código de la clase</label>
+      <label htmlFor={id}>Código de la asignatura</label>
       <div className="row">
         <input
           id={id}
@@ -58,7 +60,7 @@ export function JoinForm({ onJoined, autoFocus }) {
         </p>
       ) : (
         <small className="na-muted" id={id + '-hint'}>
-          Te lo da tu Tutor o la dirección de tu escuela. Son 8 letras y números.
+          Te lo da quien da la asignatura. Son 8 letras y números.
         </small>
       )}
     </form>

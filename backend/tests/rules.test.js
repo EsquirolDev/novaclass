@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { HAS_PB, PASS, startPocketBase } from './server.js'
+import { client, HAS_PB, PASS, startPocketBase } from './server.js'
 
 /*
- * Reglas de acceso de PocketBase contra un servidor de verdad (docs/escuelas.md, tabla «Quién puede hacer qué»).
- * Crea dos escuelas con su gente y prueba lo que cada cargo puede y no puede hacer. Sin binario, se salta.
+ * Reglas de acceso del modelo v2 contra un PocketBase de verdad (docs/escuelas.md). Dos escuelas de prueba con su
+ * gente: dirección, Tutor, Docentes, alumnado de dos cursos y alguien de otra escuela. Sin binario, se salta.
  */
 const SESSIONS = [{ start: '15:00', end: '15:55' }]
 
@@ -19,415 +19,321 @@ async function make(c, body) {
 }
 const ids = res => (res.data?.items || []).map(x => x.id)
 
-describe.skipIf(!HAS_PB)('reglas de acceso de PocketBase', () => {
+describe.skipIf(!HAS_PB)('reglas de acceso (modelo v2)', () => {
+  function call(who, method, path, body) {
+    return fetch(pb.base + path, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(who ? { Authorization: u[who].as.token } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(async x => ({ status: x.status, data: await x.json().catch(() => null) }))
+  }
+  const codeOf = async as => (await admin.one('asignaturas', as.id)).data.join_code
+
   beforeAll(async () => {
     pb = await startPocketBase()
     admin = pb.admin
-
-    for (const n of ['dir', 'tut', 'doc', 'del', 'sub', 'est', 'est2', 'otro', 'ajeno']) {
-      u[n] = await make('users', { email: n + '@test.local', password: PASS, passwordConfirm: PASS, name: n })
+    r.A = await make('schools', { name: 'Escuela Test', slug: 'escuelatest', verified: true })
+    r.B = await make('schools', { name: 'Otra Escuela', slug: 'otraescuela' })
+    const people = {
+      dir: [r.A, 'docente'],
+      coord: [r.A, 'docente'],
+      tut: [r.A, 'docente'],
+      doc: [r.A, 'docente'],
+      doc2: [r.A, 'docente'],
+      est: [r.A, 'estudiante'],
+      est2: [r.A, 'estudiante'],
+      est3: [r.A, 'estudiante'],
+      del: [r.A, 'estudiante'],
+      out: [r.A, 'estudiante'],
+      otro: [r.B, 'docente'],
+      ajeno: [r.B, 'estudiante'],
+    }
+    for (const [n, [school, role]] of Object.entries(people)) {
+      u[n] = await make('users', {
+        email: n + '@test.local',
+        username: n + '@' + school.slug,
+        password: PASS,
+        passwordConfirm: PASS,
+        name: n,
+        nombre: n,
+        school: school.id,
+        role,
+      })
       u[n].as = await pb.login('users', n + '@test.local')
     }
-    /* Dos escuelas: Sant Josep Obrer (dir) y otra (otro). El hook hace Director a quien la crea. */
-    r.sjo = (await u.dir.as.post('schools', { name: 'Sant Josep Obrer', city: 'Palma', created_by: u.dir.id })).data
-    r.otra = (await u.otro.as.post('schools', { name: 'Otra Escuela', created_by: u.otro.id })).data
-    r.A = await make('groups', { school: r.sjo.id, name: '1.º DAW A', course: '26/27', sessions: SESSIONS })
-    r.A2 = await make('groups', { school: r.sjo.id, name: '2.º DAW A', course: '26/27', sessions: SESSIONS })
-    r.O = await make('groups', { school: r.otra.id, name: '1.º SMX', course: '26/27', sessions: SESSIONS })
-    const m = (g, user, role, cargo) => make('memberships', { group: g.id, user: user.id, role, cargo })
-    r.mTut = await m(r.A, u.tut, 'docente', 'tutor')
-    r.mDoc = await m(r.A, u.doc, 'docente')
-    r.mDel = await m(r.A, u.del, 'estudiante', 'delegado')
-    r.mSub = await m(r.A, u.sub, 'estudiante', 'subdelegado')
-    r.mEst = await m(r.A, u.est, 'estudiante')
-    r.mEst2 = await m(r.A, u.est2, 'estudiante')
-    r.mEst2b = await m(r.A2, u.est2, 'estudiante')
-    r.mAjeno = await m(r.O, u.ajeno, 'estudiante')
-    /* Los módulos ya vienen de los datos de arranque */
-    r.bd = (await admin.list('modules', `&filter=${encodeURIComponent("key='bd'")}`)).data.items[0]
-  }, 30000)
-
+    await make('school_staff', { school: r.A.id, user: u.dir.id, role: 'director' })
+    await make('school_staff', { school: r.A.id, user: u.coord.id, role: 'coordinador' })
+    await make('school_staff', { school: r.B.id, user: u.otro.id, role: 'director' })
+    r.C1 = await make('cursos', { school: r.A.id, name: '1.º DAW A', course: '26/27', sessions: SESSIONS, tutor: u.tut.id })
+    r.C2 = await make('cursos', { school: r.A.id, name: '2.º DAW A', course: '26/27', sessions: SESSIONS })
+    r.CB = await make('cursos', { school: r.B.id, name: '1.º SMX', course: '26/27', sessions: SESSIONS })
+    r.aEst = await make('curso_alumnos', { curso: r.C1.id, user: u.est.id })
+    r.aEst2 = await make('curso_alumnos', { curso: r.C1.id, user: u.est2.id })
+    r.aEst3 = await make('curso_alumnos', { curso: r.C1.id, user: u.est3.id })
+    r.aDel = await make('curso_alumnos', { curso: r.C1.id, user: u.del.id, cargo: 'delegado' })
+    await make('curso_alumnos', { curso: r.C2.id, user: u.out.id })
+    await make('curso_alumnos', { curso: r.CB.id, user: u.ajeno.id })
+    const asig = (curso, school, codigo, docentes) =>
+      make('asignaturas', {
+        school: school.id,
+        curso: curso.id,
+        nombre: codigo,
+        codigo,
+        color: 'azul',
+        forma: 'circle',
+        docentes,
+        activa: true,
+      })
+    r.X = await asig(r.C1, r.A, 'PRO', [u.doc.id])
+    r.Y = await asig(r.C1, r.A, 'BD', [u.tut.id])
+    r.Z = await asig(r.CB, r.B, 'SMX', [u.otro.id])
+    r.h = await make('horario', { curso: r.C1.id, day: 1, slot: 0, asignatura: r.X.id, docente: u.doc.id })
+    /* est y del entran en PRO con el código; est2 no */
+    const code = await codeOf(r.X)
+    for (const n of ['est', 'del']) {
+      const res = await call(n, 'POST', '/api/novaclass/unirse', { code })
+      if (res.status !== 200) throw new Error('unirse: ' + JSON.stringify(res.data))
+    }
+  }, 60000)
   afterAll(() => pb?.stop())
 
-  const duda = (author, group, extra = {}) => ({
-    group: group.id,
-    module: r.bd.id,
-    author: author.id,
-    title: '¿LEFT JOIN o INNER JOIN?',
-    body: 'Con INNER JOIN no me sale ningún socio.',
-    tags: ['joins'],
-    ...extra,
-  })
-
-  describe('escuelas', () => {
-    it('quien crea una escuela queda como Director', async () => {
-      const staff = await u.dir.as.list('school_staff', `&filter=${encodeURIComponent(`school='${r.sjo.id}'`)}`)
-      expect(staff.data.items.map(s => [s.user, s.role])).toEqual([[u.dir.id, 'director']])
+  describe('cuentas', () => {
+    it('nadie se registra solo', async () => {
+      const res = await client(pb.base).post('users', { email: 'colado@test.local', password: PASS, passwordConfirm: PASS })
+      expect(res.ok).toBe(false)
     })
 
-    it('nadie verifica su propia escuela: solo la administración', async () => {
-      expect((await u.est.as.post('schools', { name: 'Mi escuela', created_by: u.est.id, verified: true })).ok).toBe(false)
-      expect((await u.dir.as.patch('schools', r.sjo.id, { verified: true })).ok).toBe(false)
-      expect((await admin.patch('schools', r.sjo.id, { verified: true })).ok).toBe(true)
+    it('se entra con el usuario de la escuela (usuario@escuela)', async () => {
+      const res = await client(pb.base).api('POST', '/api/collections/users/auth-with-password', {
+        identity: 'est@escuelatest',
+        password: PASS,
+      })
+      expect(res.ok).toBe(true)
+      expect(res.data.record.username).toBe('est@escuelatest')
     })
 
-    it('no se crea una escuela a nombre de otro', async () => {
-      expect((await u.est.as.post('schools', { name: 'Suplantada', created_by: u.dir.id })).ok).toBe(false)
+    it('cada uno cambia su contraseña, pero no quién es ni dónde está', async () => {
+      for (const field of [
+        { role: 'docente' },
+        { school: r.B.id },
+        { username: 'otro@escuelatest' },
+        { name: 'Otro' },
+        { apellidos: 'X' },
+      ]) {
+        expect((await u.est.as.patch('users', u.est.id, field)).ok, JSON.stringify(field)).toBe(false)
+      }
+      /* El NIA es un campo oculto: si se manda, no cambia */
+      await u.est.as.patch('users', u.est.id, { nia: '123' })
+      expect((await admin.one('users', u.est.id)).data.nia).toBe('')
+      const res = await u.est2.as.patch('users', u.est2.id, {
+        oldPassword: PASS,
+        password: PASS + 'x',
+        passwordConfirm: PASS + 'x',
+        must_change_password: false,
+      })
+      expect(res.ok).toBe(true)
+      u.est2.as = await pb.loginWith('est2@test.local', PASS + 'x')
     })
 
-    it('la edita su Director, no el de otra escuela ni un Docente', async () => {
-      expect((await u.dir.as.patch('schools', r.sjo.id, { city: 'Palma de Mallorca' })).ok).toBe(true)
-      expect((await u.otro.as.patch('schools', r.sjo.id, { city: 'Otra' })).ok).toBe(false)
-      expect((await u.tut.as.patch('schools', r.sjo.id, { city: 'Otra' })).ok).toBe(false)
-    })
-
-    it('un Director añade a otro Director; nadie más', async () => {
-      expect((await u.tut.as.post('school_staff', { school: r.sjo.id, user: u.tut.id, role: 'director' })).ok).toBe(false)
-      expect((await u.otro.as.post('school_staff', { school: r.sjo.id, user: u.otro.id, role: 'director' })).ok).toBe(false)
-      const add = await u.dir.as.post('school_staff', { school: r.sjo.id, user: u.doc.id, role: 'director' })
-      expect(add.ok).toBe(true)
-      expect((await u.dir.as.del('school_staff', add.data.id)).ok).toBe(true)
-    })
-  })
-
-  describe('clases', () => {
-    it('las crea la dirección de la escuela, no otra dirección ni el Tutor', async () => {
-      const g = { name: '1.º SMX B', course: '26/27', sessions: SESSIONS }
-      const made = await u.dir.as.post('groups', { ...g, school: r.sjo.id })
-      expect(made.ok, JSON.stringify(made.data)).toBe(true)
-      expect((await u.otro.as.post('groups', { ...g, school: r.sjo.id })).ok).toBe(false)
-      expect((await u.tut.as.post('groups', { ...g, school: r.sjo.id })).ok).toBe(false)
-    })
-
-    it('el código para unirse lo genera PocketBase (8 caracteres sin O/0 ni I/1)', async () => {
-      expect((await admin.one('groups', r.A.id)).data.join_code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/)
-    })
-
-    it('cada uno ve sus clases (varias si está en varias) y nunca el código', async () => {
-      expect(ids(await u.est.as.list('groups'))).toEqual([r.A.id])
-      expect(ids(await u.est2.as.list('groups')).sort()).toEqual([r.A.id, r.A2.id].sort())
-      expect(ids(await u.ajeno.as.list('groups'))).toEqual([r.O.id])
-      expect((await u.est.as.one('groups', r.A.id)).data.join_code).toBeUndefined()
-    })
-
-    it('la dirección ve todas las clases de su escuela', async () => {
-      const mine = ids(await u.dir.as.list('groups'))
-      expect(mine).toEqual(expect.arrayContaining([r.A.id, r.A2.id]))
-      expect(mine).not.toContain(r.O.id)
-    })
-
-    it('el Tutor ajusta su clase (franjas), un Estudiante no', async () => {
-      expect((await u.tut.as.patch('groups', r.A.id, { sessions: [...SESSIONS, { start: '15:55', end: '16:50' }] })).ok).toBe(true)
-      expect((await u.est.as.patch('groups', r.A.id, { name: 'Mía' })).ok).toBe(false)
-      expect((await u.tut.as.patch('groups', r.A.id, { school: r.otra.id })).ok).toBe(false)
+    it('se ve a la gente de la escuela, no a la de otra; el NIA no sale', async () => {
+      await admin.patch('users', u.est.id, { nia: 'NIA-123' })
+      const seen = await u.est.as.list('users')
+      expect(ids(seen)).toEqual(expect.arrayContaining([u.doc.id, u.out.id]))
+      expect(ids(seen)).not.toContain(u.ajeno.id)
+      expect(seen.data.items.find(x => x.id === u.est.id).nia).toBeUndefined()
     })
   })
 
-  describe('personas y cargos', () => {
-    it('solo se ve a la gente de las propias clases', async () => {
-      const seen = ids(await u.est.as.list('users'))
-      expect(seen).toEqual(expect.arrayContaining([u.tut.id, u.doc.id, u.del.id]))
-      expect(seen).not.toContain(u.ajeno.id)
-      expect(seen).not.toContain(u.otro.id)
+  describe('escuela y cursos', () => {
+    it('la dirección edita su escuela, pero ni se la verifica ni cambia su nombre corto', async () => {
+      expect((await u.dir.as.patch('schools', r.A.id, { city: 'Palma' })).ok).toBe(true)
+      expect((await u.dir.as.patch('schools', r.A.id, { verified: false })).ok).toBe(false)
+      expect((await u.dir.as.patch('schools', r.A.id, { slug: 'otro' })).ok).toBe(false)
+      expect((await u.otro.as.patch('schools', r.A.id, { city: 'X' })).ok).toBe(false)
     })
 
-    it('el Tutor añade gente; un Estudiante o un Docente no', async () => {
-      const nueva = { group: r.A.id, role: 'docente', pending_name: 'Antoni Morell Bennàser' }
-      expect((await u.est.as.post('memberships', nueva)).ok).toBe(false)
-      expect((await u.doc.as.post('memberships', nueva)).ok).toBe(false)
-      const ok = await u.tut.as.post('memberships', nueva)
-      expect(ok.ok).toBe(true)
-      expect((await u.tut.as.del('memberships', ok.data.id)).ok).toBe(true)
+    it('los cursos los crea la dirección (Director o Coordinador), no un Docente ni otra escuela', async () => {
+      const c = { school: r.A.id, name: '1.º SMX', course: '26/27', sessions: SESSIONS }
+      expect((await u.coord.as.post('cursos', c)).ok).toBe(true)
+      expect((await u.doc.as.post('cursos', c)).ok).toBe(false)
+      expect((await u.otro.as.post('cursos', c)).ok).toBe(false)
     })
 
-    it('un Docente sin cuenta necesita al menos su nombre', async () => {
-      expect((await u.tut.as.post('memberships', { group: r.A.id, role: 'docente' })).ok).toBe(false)
+    it('el Tutor es Docente de la escuela', async () => {
+      expect((await u.dir.as.patch('cursos', r.C2.id, { tutor: u.est.id })).ok).toBe(false)
+      expect((await admin.patch('cursos', r.C2.id, { tutor: u.otro.id })).ok).toBe(false)
     })
 
-    it('el Tutor nombra Delegado, pero no Tutor; la dirección sí nombra Tutor', async () => {
-      expect((await u.tut.as.patch('memberships', r.mDel.id, { cargo: '' })).ok).toBe(true)
-      expect((await u.tut.as.patch('memberships', r.mEst.id, { cargo: 'delegado' })).ok).toBe(true)
-      expect((await u.tut.as.patch('memberships', r.mEst.id, { cargo: '' })).ok).toBe(true)
-      expect((await u.tut.as.patch('memberships', r.mDel.id, { cargo: 'delegado' })).ok).toBe(true)
-      expect((await u.tut.as.patch('memberships', r.mDoc.id, { cargo: 'tutor' })).ok).toBe(false)
-      expect((await u.tut.as.patch('memberships', r.mTut.id, { cargo: '' })).ok).toBe(false)
-      expect((await u.dir.as.patch('memberships', r.mTut.id, { cargo: '' })).ok).toBe(true)
-      expect((await u.dir.as.patch('memberships', r.mTut.id, { cargo: 'tutor' })).ok).toBe(true)
+    it('en un curso solo hay Estudiantes de la escuela, y los pone la dirección', async () => {
+      expect((await u.dir.as.post('curso_alumnos', { curso: r.C2.id, user: u.doc.id })).ok).toBe(false)
+      expect((await u.dir.as.post('curso_alumnos', { curso: r.C2.id, user: u.ajeno.id })).ok).toBe(false)
+      expect((await u.tut.as.post('curso_alumnos', { curso: r.C2.id, user: u.est2.id })).ok).toBe(false)
+      expect((await u.dir.as.post('curso_alumnos', { curso: r.C2.id, user: u.est2.id })).ok).toBe(true)
     })
 
-    it('un solo Tutor, Delegado y Subdelegado por clase', async () => {
-      expect((await u.dir.as.patch('memberships', r.mDoc.id, { cargo: 'tutor' })).ok).toBe(false)
-      expect((await u.tut.as.patch('memberships', r.mEst.id, { cargo: 'delegado' })).ok).toBe(false)
-      expect((await u.tut.as.patch('memberships', r.mEst.id, { cargo: 'subdelegado' })).ok).toBe(false)
+    it('el Tutor nombra Delegado y Subdelegado; la baja del curso la da la dirección', async () => {
+      expect((await u.tut.as.patch('curso_alumnos', r.aEst.id, { cargo: 'subdelegado' })).ok).toBe(true)
+      expect((await u.tut.as.patch('curso_alumnos', r.aEst2.id, { cargo: 'subdelegado' })).ok).toBe(false) // ya hay uno
+      expect((await u.tut.as.patch('curso_alumnos', r.aEst.id, { baja: true })).ok).toBe(false)
+      expect((await u.est.as.patch('curso_alumnos', r.aEst.id, { cargo: 'delegado' })).ok).toBe(false)
+      expect((await u.tut.as.patch('curso_alumnos', r.aEst.id, { cargo: '' })).ok).toBe(true)
     })
 
-    it('el Tutor es Docente; el Delegado y el Subdelegado, Estudiantes', async () => {
-      expect((await u.dir.as.patch('memberships', r.mTut.id, { role: 'estudiante' })).ok).toBe(false)
-      expect((await u.tut.as.patch('memberships', r.mDel.id, { role: 'docente' })).ok).toBe(false)
-    })
-
-    it('una persona una sola vez por clase', async () => {
-      expect((await u.tut.as.post('memberships', { group: r.A.id, user: u.est.id, role: 'estudiante' })).ok).toBe(false)
-    })
-
-    it('nadie se hace Docente ni Delegado a sí mismo', async () => {
-      expect((await u.est.as.patch('memberships', r.mEst.id, { role: 'docente' })).ok).toBe(false)
-      expect((await u.est.as.patch('memberships', r.mEst.id, { cargo: 'delegado' })).ok).toBe(false)
-      expect((await u.est.as.post('memberships', { group: r.A2.id, user: u.est.id, role: 'docente' })).ok).toBe(false)
-    })
-
-    it('la dirección de otra escuela no toca tus clases', async () => {
-      expect((await u.otro.as.post('memberships', { group: r.A.id, user: u.otro.id, role: 'docente' })).ok).toBe(false)
-      expect(ids(await u.otro.as.list('memberships'))).not.toContain(r.mEst.id)
-    })
-
-    it('cualquiera puede salirse de una clase', async () => {
-      const extra = await make('memberships', { group: r.A2.id, user: u.est.id, role: 'estudiante' })
-      expect((await u.est.as.del('memberships', extra.id)).ok).toBe(true)
+    it('otra escuela no ve los cursos ni su alumnado', async () => {
+      expect(ids(await u.ajeno.as.list('cursos'))).toEqual([r.CB.id])
+      expect(ids(await u.ajeno.as.list('curso_alumnos'))).not.toContain(r.aEst.id)
     })
   })
 
-  describe('horario, temas, entregas y exámenes', () => {
-    const ev = (g, extra = {}) => ({
-      group: g.id,
-      module: r.bd.id,
-      type: 'entrega',
-      title: 'Modelo E/R biblioteca',
-      date: '2026-10-09',
-      time: '23:59',
+  describe('asignaturas y horario', () => {
+    it('las asignaturas las crea la dirección; sus Docentes cambian la etiqueta, no el curso ni los Docentes', async () => {
+      const nueva = { school: r.A.id, curso: r.C1.id, nombre: 'X', codigo: 'X', color: 'rosa', forma: 'star' }
+      expect((await u.doc.as.post('asignaturas', nueva)).ok).toBe(false)
+      expect((await u.doc.as.patch('asignaturas', r.X.id, { color: 'rosa', forma: 'star', codigo: 'PROG' })).ok).toBe(true)
+      expect((await u.doc.as.patch('asignaturas', r.X.id, { curso: r.C2.id })).ok).toBe(false)
+      expect((await u.doc.as.patch('asignaturas', r.X.id, { docentes: [u.doc.id, u.doc2.id] })).ok).toBe(false)
+      expect((await u.doc2.as.patch('asignaturas', r.X.id, { color: 'lima' })).ok).toBe(false)
+    })
+
+    it('los Docentes de una asignatura son Docentes de la escuela', async () => {
+      expect((await u.dir.as.patch('asignaturas', r.Y.id, { docentes: [u.otro.id] })).ok).toBe(false)
+      expect((await u.dir.as.patch('asignaturas', r.Y.id, { docentes: [u.est.id] })).ok).toBe(false)
+    })
+
+    it('el horario lo monta la dirección, con asignaturas del curso y sus Docentes', async () => {
+      const h = extra => ({ curso: r.C1.id, day: 2, slot: 0, asignatura: r.X.id, docente: u.doc.id, ...extra })
+      expect((await u.doc.as.post('horario', h())).ok).toBe(false)
+      expect((await u.dir.as.post('horario', h({ curso: r.C2.id }))).ok).toBe(false) // asignatura de otro curso
+      expect((await u.dir.as.post('horario', h({ docente: u.doc2.id }))).ok).toBe(false)
+      expect((await u.coord.as.post('horario', h())).ok).toBe(true)
+    })
+
+    it('el horario lo ve la escuela; otra escuela no', async () => {
+      expect(ids(await u.out.as.list('horario'))).toContain(r.h.id)
+      expect(ids(await u.ajeno.as.list('horario'))).not.toContain(r.h.id)
+    })
+  })
+
+  describe('código de cada asignatura', () => {
+    it('lo ven sus Docentes y la dirección; ni el alumnado ni otros Docentes', async () => {
+      const code = await codeOf(r.X)
+      const path = `/api/novaclass/asignaturas/${r.X.id}/codigo`
+      expect((await call('doc', 'GET', path)).data.code).toBe(code)
+      expect((await call('coord', 'GET', path)).data.code).toBe(code)
+      for (const who of ['est', 'doc2', 'tut', 'otro']) expect((await call(who, 'GET', path)).status, who).toBe(403)
+    })
+
+    it('con el código entra el alumnado del curso (escrito como sea); de otro curso u otra escuela no', async () => {
+      const code = await codeOf(r.X)
+      const res = await call('est3', 'POST', '/api/novaclass/unirse', { code: code.toLowerCase().slice(0, 4) + '-' + code.slice(4) })
+      expect(res.data).toMatchObject({ asignatura: r.X.id, curso: r.C1.id, already: false })
+      expect((await call('est3', 'POST', '/api/novaclass/unirse', { code })).data.already).toBe(true)
+      expect((await call('out', 'POST', '/api/novaclass/unirse', { code })).status).toBe(403) // de 2.º
+      expect((await call('doc2', 'POST', '/api/novaclass/unirse', { code })).status).toBe(403) // Docente
+      expect((await call('ajeno', 'POST', '/api/novaclass/unirse', { code })).status).toBe(404)
+      await admin.patch('curso_alumnos', r.aEst3.id, { baja: true })
+      expect((await call('est3', 'POST', '/api/novaclass/unirse', { code })).status).toBe(403) // baja del curso
+      await admin.patch('curso_alumnos', r.aEst3.id, { baja: false })
+      await admin.patch('asignaturas', r.Y.id, { activa: false })
+      expect((await call('est', 'POST', '/api/novaclass/unirse', { code: await codeOf(r.Y) })).status).toBe(400) // sin espacio
+      await admin.patch('asignaturas', r.Y.id, { activa: true })
+      expect((await call('est3', 'POST', '/api/novaclass/unirse', { code: 'ZZZZZZZZ' })).status).toBe(404)
+      expect((await u.est2.as.post('inscripciones', { asignatura: r.X.id, user: u.est2.id })).ok).toBe(false)
+    })
+
+    it('al cambiar el código, el anterior deja de servir', async () => {
+      const before = await codeOf(r.Y)
+      const path = `/api/novaclass/asignaturas/${r.Y.id}/codigo`
+      expect((await call('doc', 'POST', path)).status).toBe(403)
+      const fresh = (await call('tut', 'POST', path)).data.code
+      expect(fresh).toMatch(/^[A-HJ-NP-Z2-9]{8}$/)
+      expect(fresh).not.toBe(before)
+      expect((await call('est2', 'POST', '/api/novaclass/unirse', { code: before })).status).toBe(404)
+    })
+  })
+
+  describe('contenido de la asignatura', () => {
+    const ev = extra => ({ asignatura: r.X.id, type: 'entrega', title: 'Bucles', date: '2026-10-09', time: '23:59', ...extra })
+    const duda = (who, extra = {}) => ({
+      asignatura: r.X.id,
+      author: u[who].id,
+      title: '¿LEFT JOIN o INNER JOIN?',
+      body: 'Con INNER JOIN no me sale ningún socio.',
       ...extra,
     })
 
-    it('los gestionan Docentes, Tutor, Delegado, Subdelegado y Director', async () => {
-      for (const n of ['tut', 'doc', 'del', 'sub', 'dir']) {
-        expect((await u[n].as.post('events', ev(r.A, { title: 'Hecho por ' + n }))).ok, n).toBe(true)
-      }
+    it('entregas y exámenes: los gestionan sus Docentes, la dirección y el Delegado inscrito', async () => {
+      for (const who of ['doc', 'dir', 'del']) expect((await u[who].as.post('events', ev({ title: 'De ' + who }))).ok, who).toBe(true)
+      for (const who of ['est', 'doc2', 'tut', 'otro']) expect((await u[who].as.post('events', ev())).ok, who).toBe(false)
     })
 
-    it('un Estudiante, alguien de otra clase o de otra escuela no', async () => {
-      expect((await u.est.as.post('events', ev(r.A))).ok).toBe(false)
-      expect((await u.ajeno.as.post('events', ev(r.A))).ok).toBe(false)
-      expect((await u.otro.as.post('events', ev(r.A))).ok).toBe(false)
-      expect((await u.del.as.post('events', ev(r.A2))).ok).toBe(false)
+    it('solo lo ve quien ha entrado con el código, sus Docentes y la dirección', async () => {
+      const e = (await u.doc.as.post('events', ev({ title: 'Visible?' }))).data
+      for (const who of ['est', 'del', 'doc', 'coord']) expect(ids(await u[who].as.list('events')), who).toContain(e.id)
+      for (const who of ['est2', 'doc2', 'ajeno']) expect(ids(await u[who].as.list('events')), who).not.toContain(e.id)
     })
 
-    it('fecha y hora con formato fijo', async () => {
-      expect((await u.doc.as.post('events', ev(r.A, { date: '9/10/2026' }))).ok).toBe(false)
-      expect((await u.doc.as.post('events', ev(r.A, { time: '23h' }))).ok).toBe(false)
-    })
-
-    it('el horario apunta a un Docente de la clase', async () => {
-      const s = await u.del.as.post('schedule', { group: r.A.id, day: 1, slot: 0, module: r.bd.id, teacher: r.mDoc.id })
-      expect(s.ok).toBe(true)
-      expect((await u.est.as.patch('schedule', s.data.id, { day: 2 })).ok).toBe(false)
-      expect((await u.del.as.patch('schedule', s.data.id, { day: 2 })).ok).toBe(true)
-    })
-
-    it('«hecha» y la nota son de cada uno', async () => {
-      const e = (await u.doc.as.post('events', ev(r.A))).data
+    it('«hecha» y nota: cada uno lo suyo, y solo de lo que puede ver', async () => {
+      const e = (await u.doc.as.post('events', ev())).data
       expect((await u.est.as.post('event_status', { user: u.est.id, event: e.id, done: true, grade: '8,5' })).ok).toBe(true)
-      expect((await u.est.as.post('event_status', { user: u.est.id, event: e.id, done: true })).ok).toBe(false)
-      expect((await u.del.as.post('event_status', { user: u.est.id, event: e.id, done: false })).ok).toBe(false)
+      expect((await u.est2.as.post('event_status', { user: u.est2.id, event: e.id, done: true })).ok).toBe(false)
+      expect((await u.del.as.post('event_status', { user: u.est.id, event: e.id, done: true })).ok).toBe(false)
       expect((await u.doc.as.list('event_status')).data.items).toHaveLength(0)
-      expect((await u.ajeno.as.post('event_status', { user: u.ajeno.id, event: e.id, done: true })).ok).toBe(false)
-    })
-  })
-
-  describe('dudas', () => {
-    it('se crean en una clase propia y a nombre propio', async () => {
-      expect((await u.est.as.post('dudas', duda(u.est, r.A))).ok).toBe(true)
-      expect((await u.est.as.post('dudas', duda(u.est, r.A2))).ok).toBe(false)
-      expect((await u.est.as.post('dudas', duda(u.del, r.A))).ok).toBe(false)
-      expect((await u.est.as.post('dudas', duda(u.est, r.A, { views: 999 }))).ok).toBe(false)
-      expect((await u.dir.as.post('dudas', duda(u.dir, r.A))).ok).toBe(false)
     })
 
-    it('mismos mínimos que el formulario (título de 10, explicación de 20)', async () => {
-      expect((await u.est.as.post('dudas', duda(u.est, r.A, { title: 'corto' }))).ok).toBe(false)
-      expect((await u.est.as.post('dudas', duda(u.est, r.A, { body: 'poco' }))).ok).toBe(false)
-    })
-
-    it('las ven su clase y su dirección, no otra clase ni otra escuela', async () => {
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      expect(ids(await u.doc.as.list('dudas'))).toContain(d.id)
-      expect(ids(await u.dir.as.list('dudas'))).toContain(d.id)
-      expect(ids(await u.ajeno.as.list('dudas'))).not.toContain(d.id)
-      expect(ids(await u.otro.as.list('dudas'))).not.toContain(d.id)
-    })
-
-    it('solo quien pregunta la edita, sin tocar autor, clase ni visitas', async () => {
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      expect((await u.doc.as.patch('dudas', d.id, { title: 'Te la cambio yo, que sé más' })).ok).toBe(false)
-      expect((await u.est.as.patch('dudas', d.id, { title: '¿LEFT JOIN o NOT EXISTS?', edited: true })).ok).toBe(true)
-      expect((await u.est.as.patch('dudas', d.id, { author: u.del.id })).ok).toBe(false)
-      expect((await u.est.as.patch('dudas', d.id, { views: 500 })).ok).toBe(false)
-    })
-
-    it('respuesta aceptada: solo una de la propia duda', async () => {
-      const d1 = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      const d2 = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      const a1 = (await u.del.as.post('answers', { duda: d1.id, author: u.del.id, body: 'Usa LEFT JOIN y filtra NULL.' })).data
-      const a2 = (await u.del.as.post('answers', { duda: d2.id, author: u.del.id, body: 'Otra cosa.' })).data
-      expect((await u.est.as.patch('dudas', d1.id, { accepted: a2.id })).ok).toBe(false)
-      expect((await u.del.as.patch('dudas', d1.id, { accepted: a1.id })).ok).toBe(false)
-      expect((await u.est.as.patch('dudas', d1.id, { accepted: a1.id })).ok).toBe(true)
-    })
-
-    it('borrada (deleted): solo la ve quien la escribió y no admite respuestas', async () => {
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      expect((await u.est.as.patch('dudas', d.id, { deleted: true })).ok).toBe(true)
-      expect(ids(await u.del.as.list('dudas'))).not.toContain(d.id)
-      expect(ids(await u.est.as.list('dudas'))).toContain(d.id)
-      expect((await u.del.as.post('answers', { duda: d.id, author: u.del.id, body: 'Llego tarde' })).ok).toBe(false)
-    })
-
-    it('moderar: Docentes y Director borran; Delegado y otros Estudiantes no', async () => {
-      for (const [n, ok] of [
-        ['est2', false],
+    it('dudas: pregunta quien está dentro y a nombre propio; moderan sus Docentes y la dirección', async () => {
+      expect((await u.est.as.post('dudas', duda('est'))).ok).toBe(true)
+      expect((await u.est2.as.post('dudas', duda('est2'))).ok).toBe(false)
+      expect((await u.est.as.post('dudas', duda('del'))).ok).toBe(false)
+      for (const [who, ok] of [
         ['del', false],
-        ['otro', false],
+        ['doc2', false],
         ['doc', true],
+        ['dir', true],
       ]) {
-        const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-        expect((await u[n].as.del('dudas', d.id)).ok, n).toBe(ok)
+        const d = (await u.est.as.post('dudas', duda('est'))).data
+        expect((await u[who].as.del('dudas', d.id)).ok, who).toBe(ok)
       }
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      expect((await u.dir.as.del('dudas', d.id)).ok).toBe(true)
     })
-  })
 
-  describe('votos', () => {
-    it('un voto por persona y duda, y otro aparte por respuesta', async () => {
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      const a = (await u.est.as.post('answers', { duda: d.id, author: u.est.id, body: 'Me respondo a mí misma.' })).data
+    it('respuesta aceptada de la propia duda, un voto por persona y estadísticas', async () => {
+      const d = (await u.est.as.post('dudas', duda('est'))).data
+      const a = (await u.doc.as.post('answers', { duda: d.id, author: u.doc.id, body: 'Usa LEFT JOIN.' })).data
+      expect((await u.del.as.patch('dudas', d.id, { accepted: a.id })).ok).toBe(false)
+      expect((await u.est.as.patch('dudas', d.id, { accepted: a.id })).ok).toBe(true)
       expect((await u.del.as.post('votes', { user: u.del.id, duda: d.id, value: 1 })).ok).toBe(true)
       expect((await u.del.as.post('votes', { user: u.del.id, duda: d.id, value: 1 })).ok).toBe(false)
-      expect((await u.del.as.post('votes', { user: u.del.id, duda: d.id, answer: a.id, value: -1 })).ok).toBe(true)
-      expect((await u.del.as.post('votes', { user: u.est.id, duda: d.id, value: 1 })).ok).toBe(false)
-      expect((await u.del.as.post('votes', { user: u.del.id, duda: d.id, value: 5 })).ok).toBe(false)
-      expect((await u.ajeno.as.post('votes', { user: u.ajeno.id, duda: d.id, value: 1 })).ok).toBe(false)
-
-      const stats = (await u.est.as.one('dudas_stats', d.id)).data
-      expect(stats).toMatchObject({ votes: 1, answers: 1 })
-      expect((await u.est.as.one('answers_stats', a.id)).data.votes).toBe(-1)
+      expect((await u.est2.as.post('votes', { user: u.est2.id, duda: d.id, value: 1 })).ok).toBe(false)
+      expect((await u.est.as.one('dudas_stats', d.id)).data).toMatchObject({ votes: 1, answers: 1 })
     })
 
-    it('no se vota una respuesta de otra duda', async () => {
-      const d1 = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      const d2 = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      const a2 = (await u.est.as.post('answers', { duda: d2.id, author: u.est.id, body: 'Respuesta de d2' })).data
-      expect((await u.del.as.post('votes', { user: u.del.id, duda: d1.id, answer: a2.id, value: 1 })).ok).toBe(false)
-    })
-  })
-
-  describe('apuntes', () => {
-    it('a nombre propio, sin inventarse descargas, y los modera un Docente', async () => {
-      const ap = { group: r.A.id, module: r.bd.id, author: u.est.id, type: 'enlace', title: 'SQLBolt', url: 'https://sqlbolt.com' }
-      const ok = await u.est.as.post('apuntes', ap)
-      expect(ok.ok).toBe(true)
-      expect((await u.est.as.post('apuntes', { ...ap, downloads: 100 })).ok).toBe(false)
-      expect((await u.est.as.patch('apuntes', ok.data.id, { downloads: 100 })).ok).toBe(false)
-      expect((await u.del.as.patch('apuntes', ok.data.id, { title: 'Mío ahora' })).ok).toBe(false)
-      expect(ids(await u.ajeno.as.list('apuntes'))).not.toContain(ok.data.id)
-      expect((await u.del.as.del('apuntes', ok.data.id)).ok).toBe(false)
-      expect((await u.doc.as.del('apuntes', ok.data.id)).ok).toBe(true)
-    })
-  })
-
-  describe('contadores y PDF protegidos', () => {
-    const pdf = () => new Blob(['%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n'], { type: 'application/pdf' })
-    async function subirPdf(who) {
+    it('apuntes: a nombre propio, sin inventarse descargas; el PDF solo con token', async () => {
       const form = new FormData()
-      for (const [k, v] of Object.entries({ group: r.A.id, module: r.bd.id, author: u[who].id, type: 'pdf', title: 'Resumen JOINs' }))
-        form.append(k, v)
-      form.append('file', pdf(), 'joins.pdf')
+      for (const [k, v] of Object.entries({ asignatura: r.X.id, author: u.est.id, type: 'pdf', title: 'Resumen' })) form.append(k, v)
+      form.append('file', new Blob(['%PDF-1.4\n%%EOF\n'], { type: 'application/pdf' }), 'r.pdf')
       const res = await fetch(pb.base + '/api/collections/apuntes/records', {
         method: 'POST',
-        headers: { Authorization: u[who].as.token },
+        headers: { Authorization: u.est.as.token },
         body: form,
       })
-      return res.json()
-    }
-    const post = (who, path) =>
-      fetch(pb.base + path, { method: 'POST', headers: who ? { Authorization: u[who].as.token } : {} }).then(async x => ({
-        status: x.status,
-        data: await x.json().catch(() => null),
-      }))
-
-    it('abrir un apunte suma una descarga solo a quien puede verlo', async () => {
-      const ap = await subirPdf('est')
-      expect((await post('del', `/api/novaclass/apuntes/${ap.id}/abierto`)).data.downloads).toBe(1)
-      expect((await post('dir', `/api/novaclass/apuntes/${ap.id}/abierto`)).data.downloads).toBe(2)
-      expect((await post('ajeno', `/api/novaclass/apuntes/${ap.id}/abierto`)).status).toBe(404)
-      expect((await post(null, `/api/novaclass/apuntes/${ap.id}/abierto`)).status).toBe(401)
-      expect((await admin.one('apuntes', ap.id)).data.downloads).toBe(2)
-    })
-
-    it('abrir una duda suma una visita; una borrada solo la cuenta su autor', async () => {
-      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
-      expect((await post('doc', `/api/novaclass/dudas/${d.id}/visita`)).data.views).toBe(1)
-      expect((await post('otro', `/api/novaclass/dudas/${d.id}/visita`)).status).toBe(404)
-      await u.est.as.patch('dudas', d.id, { deleted: true })
-      expect((await post('doc', `/api/novaclass/dudas/${d.id}/visita`)).status).toBe(404)
-    })
-
-    it('un PDF no se descarga sin token de archivo; con el de alguien de la clase, sí', async () => {
-      const ap = await subirPdf('est')
+      const ap = await res.json()
+      expect(ap.id).toBeTruthy()
       const url = `${pb.base}/api/files/apuntes/${ap.id}/${ap.file}`
       expect((await fetch(url)).status).toBeGreaterThanOrEqual(400)
       const token = async who => (await u[who].as.api('POST', '/api/files/token')).data.token
       expect((await fetch(url + '?token=' + (await token('del')))).status).toBe(200)
-      expect((await fetch(url + '?token=' + (await token('ajeno')))).status).toBeGreaterThanOrEqual(400)
-    })
-  })
-
-  describe('unirse con código', () => {
-    const call = (who, method, path, body) =>
-      fetch(pb.base + path, {
-        method,
-        headers: { 'Content-Type': 'application/json', ...(who ? { Authorization: u[who].as.token } : {}) },
-        body: body ? JSON.stringify(body) : undefined,
-      }).then(async x => ({ status: x.status, data: await x.json().catch(() => null) }))
-    let nueva
-    beforeAll(async () => {
-      nueva = await make('users', { email: 'nueva@test.local', password: PASS, passwordConfirm: PASS, name: 'Nueva' })
-      u.nueva = { ...nueva, as: await pb.login('users', 'nueva@test.local') }
+      expect((await fetch(url + '?token=' + (await token('est2')))).status).toBeGreaterThanOrEqual(400)
+      expect((await u.est.as.patch('apuntes', ap.id, { downloads: 100 })).ok).toBe(false)
+      expect((await call('del', 'POST', `/api/novaclass/apuntes/${ap.id}/abierto`)).data.downloads).toBe(1)
+      expect((await call('est2', 'POST', `/api/novaclass/apuntes/${ap.id}/abierto`)).status).toBe(404)
     })
 
-    it('el Tutor y la dirección ven el código; un Estudiante, un Docente o la otra escuela no', async () => {
-      const code = (await admin.one('groups', r.A.id)).data.join_code
-      expect((await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code).toBe(code)
-      expect((await call('dir', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code).toBe(code)
-      for (const who of ['est', 'doc', 'del', 'otro'])
-        expect((await call(who, 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).status, who).toBe(403)
-      expect((await call(null, 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).status).toBe(401)
-    })
-
-    it('con el código se entra como Estudiante (escrito como sea); dos veces no duplica', async () => {
-      const code = (await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
-      const messy = ' ' + code.slice(0, 4).toLowerCase() + '-' + code.slice(4) + ' '
-      const first = await call('nueva', 'POST', '/api/novaclass/unirse', { code: messy })
-      expect(first.data).toMatchObject({ group: r.A.id, name: '1.º DAW A', already: false })
-      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code })).data.already).toBe(true)
-      const mine = (await admin.list('memberships', `&filter=${encodeURIComponent(`user='${nueva.id}'`)}`)).data.items
-      expect(mine.map(m => [m.group, m.role, m.cargo])).toEqual([[r.A.id, 'estudiante', '']])
-      expect(ids(await u.nueva.as.list('dudas')).length).toBeGreaterThan(0)
-    })
-
-    it('un código que no existe o mal formado no entra', async () => {
-      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code: 'ZZZZZZZZ' })).status).toBe(404)
-      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code: 'ABC' })).status).toBe(400)
-      expect((await call(null, 'POST', '/api/novaclass/unirse', { code: 'ZZZZZZZZ' })).status).toBe(401)
-    })
-
-    it('al cambiar el código, el anterior deja de servir; solo lo cambian Tutor o dirección', async () => {
-      const old = (await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
-      expect((await call('est', 'POST', `/api/novaclass/clases/${r.A.id}/codigo`)).status).toBe(403)
-      const fresh = (await call('tut', 'POST', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
-      expect(fresh).toMatch(/^[A-HJ-NP-Z2-9]{8}$/)
-      expect(fresh).not.toBe(old)
-      expect((await call('ajeno', 'POST', '/api/novaclass/unirse', { code: old })).status).toBe(404)
-      expect((await call('ajeno', 'POST', '/api/novaclass/unirse', { code: fresh })).status).toBe(200)
+    it('festivos: los pone la dirección y los ve la escuela', async () => {
+      expect((await u.doc.as.post('festivos', { school: r.A.id, title: 'Fiesta', date: '2026-10-12' })).ok).toBe(false)
+      const f = await u.dir.as.post('festivos', { school: r.A.id, title: 'Fiesta Nacional', date: '2026-10-12' })
+      expect(f.ok).toBe(true)
+      expect(ids(await u.est.as.list('festivos'))).toContain(f.data.id)
+      expect(ids(await u.ajeno.as.list('festivos'))).not.toContain(f.data.id)
     })
   })
 })

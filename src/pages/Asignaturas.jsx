@@ -1,13 +1,15 @@
-import { Card, Icon, ProgressSegments } from '../components/index.js'
+import { Card, EmptyState, Icon, JoinForm, ProgressSegments, SubjectTag } from '../components/index.js'
 import { SUBJECTS } from '../data/subjects.js'
 import { shortDate } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
 import { teacherNames, weeklyHours } from '../lib/schedule.js'
+import { useClase } from '../state/clase.jsx'
 import { allProgress } from '../state/selectors.js'
 import { useStore } from '../state/store.jsx'
 
 export default function Asignaturas() {
   const { now, events } = useStore()
+  const { locked = [] } = useClase()
   const progress = allProgress(events, now)
   return (
     <div className="nc-screen">
@@ -15,7 +17,7 @@ export default function Asignaturas() {
         <div className="nc-top">
           <div>
             <h1 className="na-t-display-xl">Asignaturas</h1>
-            <p className="na-t-subtitle na-muted">Las asignaturas de tu clase. Cada una con su color, su forma y su código.</p>
+            <p className="na-t-subtitle na-muted">Las asignaturas de tu curso. Cada una con su color, su forma y su código.</p>
           </div>
         </div>
         <div className="nc-subjects">
@@ -56,6 +58,26 @@ export default function Asignaturas() {
             )
           })}
         </div>
+        {!progress.length && !locked.length ? (
+          <EmptyState icon="book" title="Aún no hay asignaturas abiertas" className="nc-state-card">
+            Cuando quien da cada asignatura abra su espacio (entregas, apuntes y dudas), saldrá aquí.
+          </EmptyState>
+        ) : null}
+        {locked.length ? (
+          <section className="nc-group nc-locked-group" aria-labelledby="sin-entrar">
+            <h2 className="nc-gtitle na-t-title" id="sin-entrar">
+              Aún no has entrado<span className="na-pill-count">{locked.length}</span>
+            </h2>
+            <div className="na-card nc-locked-card">
+              <div className="nc-locked">
+                {locked.map(id => (
+                  <SubjectTag key={id} subject={id} showName />
+                ))}
+              </div>
+              <JoinForm />
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   )

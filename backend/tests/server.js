@@ -41,7 +41,7 @@ export async function startPocketBase() {
   const args = ['--dir', join(dir, 'data'), '--migrationsDir', join(ROOT, 'pb_migrations'), '--hooksDir', join(ROOT, 'pb_hooks')]
   const up = spawnSync(BIN, ['superuser', 'upsert', 'admin@test.local', PASS, ...args], { encoding: 'utf8' })
   if (up.status !== 0) throw new Error(up.stderr || up.stdout)
-  const proc = spawn(BIN, ['serve', '--http', `127.0.0.1:${port}`, ...args], { stdio: 'ignore' })
+  const proc = spawn(BIN, ['serve', '--http', `127.0.0.1:${port}`, '--automigrate=false', ...args], { stdio: 'ignore' })
   for (let i = 0; i < 60; i++) {
     if (
       await fetch(base + '/api/health').then(

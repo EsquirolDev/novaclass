@@ -33,7 +33,7 @@ export function toApuntes(records, uid, now) {
     .map(a => ({
       id: a.id,
       collectionId: a.collectionId,
-      subject: a.expand?.module?.key || null,
+      subject: a.asignatura || null,
       tema: a.tema || 'Sin tema',
       type: a.type,
       title: a.title,

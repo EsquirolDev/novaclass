@@ -22,7 +22,8 @@ describe('apuntes desde PocketBase', () => {
           bytes: 1200000,
           file: 'resumen_x1.pdf',
           author: 'u1',
-          expand: { author: { name: 'Ana' }, module: { key: 'bd' } },
+          asignatura: 'bd',
+          expand: { author: { name: 'Ana' } },
           downloads: 7,
         }),
         rec('e', '2026-10-08 15:00:00.000Z', {
@@ -30,7 +31,7 @@ describe('apuntes desde PocketBase', () => {
           title: 'SQLBolt',
           url: 'https://www.sqlbolt.com/lesson',
           author: 'u2',
-          expand: { module: { key: 'bd' } },
+          asignatura: 'bd',
         }),
         rec('n', '2026-10-07 09:00:00.000Z', {
           type: 'nota',

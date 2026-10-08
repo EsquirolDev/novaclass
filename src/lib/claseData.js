@@ -1,9 +1,10 @@
 /*
- * Registros de PocketBase → la forma que ya usa la app (la misma que src/data/seed.js), para que las pantallas no
- * tengan que saber de dónde vienen los datos. Funciones puras: se prueban en claseData.test.js.
+ * Registros de PocketBase (modelo v2: cursos, asignaturas, horario…) → la forma que ya usa la app (la misma que
+ * src/data/seed.js), para que las pantallas no tengan que saber de dónde vienen los datos. La clave de cada asignatura
+ * es el id de su registro. Funciones puras: se prueban en claseData.test.js.
  */
 
-const personName = m => (m.expand?.user?.name || m.pending_name || m.expand?.user?.email || '').trim()
+const userName = u => (u?.name || [u?.nombre, u?.apellidos].filter(Boolean).join(' ') || u?.username || '').trim()
 
 /*
  * Nombre corto de cada Docente: el nombre de pila, o los dos primeros si hay dos con el mismo
@@ -17,42 +18,58 @@ export function shortNames(people) {
 }
 
 /*
- * Horario de la clase: franjas, patio, una celda por día y franja ({ id: clave del módulo, teacher }) y los Docentes.
- * `schedule` con expand de module; `memberships` de la clase (con expand de user).
+ * Asignaturas del curso para el registro de subjects.js. Tiene espacio (página, entregas, apuntes, dudas) si su Docente
+ * lo ha abierto (activa) y la persona puede entrar: ha puesto el código, la da o es de la dirección.
  */
-export function toHorario(group, schedule, memberships) {
-  const sessions = Array.isArray(group.sessions) ? group.sessions : []
-  const brk = group.break && group.break.start ? { label: 'Patio', ...group.break } : null
+export function toSubjects(asignaturas, { uid, inscritas = [], staff = false }) {
+  const mine = new Set(inscritas)
+  return asignaturas.map(a => ({
+    id: a.id,
+    code: a.codigo,
+    name: a.nombre,
+    color: a.color,
+    shape: a.forma,
+    active: !!a.activa && (staff || mine.has(a.id) || (a.docentes || []).includes(uid)),
+  }))
+}
+
+/*
+ * Horario del curso: franjas, patio, una celda por día y franja ({ id: asignatura, teacher: usuario }) y los Docentes.
+ * `horario` con expand de docente.
+ */
+export function toHorario(curso, horario) {
+  const sessions = Array.isArray(curso.sessions) ? curso.sessions : []
+  const brk = curso.break && curso.break.start ? { label: 'Patio', ...curso.break } : null
   const SCHEDULE = {}
   for (const day of [1, 2, 3, 4, 5]) SCHEDULE[day] = sessions.map(() => null)
-  for (const s of schedule) {
-    const key = s.expand?.module?.key
-    if (!key || !SCHEDULE[s.day] || s.slot >= sessions.length) continue
-    SCHEDULE[s.day][s.slot] = { id: key, teacher: s.teacher || null }
+  const people = {}
+  for (const h of horario) {
+    if (!h.asignatura || !SCHEDULE[h.day] || h.slot >= sessions.length) continue
+    SCHEDULE[h.day][h.slot] = { id: h.asignatura, teacher: h.docente || null }
+    if (h.docente) people[h.docente] = userName(h.expand?.docente) || 'Docente'
   }
-  const docentes = memberships.filter(m => m.role === 'docente').map(m => ({ id: m.id, name: personName(m) }))
+  const docentes = Object.entries(people).map(([id, name]) => ({ id, name }))
   const short = shortNames(docentes)
   const TEACHERS = Object.fromEntries(docentes.map(d => [d.id, { short: short[d.id], name: d.name }]))
   return { SESSIONS: sessions, BREAK: brk, SCHEDULE, TEACHERS }
 }
 
-/* Temas por módulo, en su orden: { pro: [['Arrays', 'now'], …] } */
+/* Temas por asignatura, en su orden: { [asignatura]: [['Arrays', 'now'], …] } */
 export function toTemas(topics) {
   const out = {}
   for (const t of [...topics].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))) {
-    const key = t.expand?.module?.key
-    if (!key) continue
-    ;(out[key] ||= []).push([t.title, t.status || ''])
+    if (!t.asignatura) continue
+    ;(out[t.asignatura] ||= []).push([t.title, t.status || ''])
   }
   return out
 }
 
-/* Entregas, exámenes y festivos, con lo que la persona ha marcado (hecha y nota) */
-export function toEvents(events, statuses = []) {
+/* Entregas y exámenes con lo que la persona ha marcado (hecha y nota), y los festivos de la escuela */
+export function toEvents(events, statuses = [], festivos = []) {
   const mine = Object.fromEntries(statuses.map(s => [s.event, s]))
-  return events.map(e => ({
+  const own = events.map(e => ({
     id: e.id,
-    subject: e.expand?.module?.key || null,
+    subject: e.asignatura || null,
     type: e.type,
     title: e.title,
     date: e.date,
@@ -68,10 +85,35 @@ export function toEvents(events, statuses = []) {
     done: !!mine[e.id]?.done,
     grade: mine[e.id]?.grade || undefined,
   }))
+  const free = festivos.map(f => ({ id: f.id, subject: null, type: 'festivo', title: f.title, date: f.date, done: false }))
+  return [...own, ...free].sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')))
 }
 
-/* Mi papel en la clase: { role: 'estudiante' | 'docente' | null, cargo, director } */
-export function myRole(memberships, userId, isDirector) {
-  const m = memberships.find(x => x.user === userId)
-  return { role: m?.role || null, cargo: m?.cargo || null, director: !!isDirector }
+/*
+ * Mi papel en el curso: { role: 'estudiante' | 'docente' | null, cargo: 'tutor' | 'delegado' | 'subdelegado' | null,
+ * director } (director: es de la dirección de la escuela, Director o Coordinador)
+ */
+export function myRole(user, curso, alumnos, isStaff) {
+  const a = alumnos.find(x => x.user === user.id)
+  const cargo = curso.tutor && curso.tutor === user.id ? 'tutor' : a?.cargo || null
+  return { role: user.role || null, cargo, director: !!isStaff }
+}
+
+/*
+ * Gente del curso para «Tu clase»: Tutor, Docentes (los de sus asignaturas) y alumnado con su cargo.
+ * `asignaturas` con expand de docentes; `alumnos` (curso_alumnos) con expand de user; `tutor` el usuario o null.
+ */
+export function toPeople(curso, asignaturas, alumnos) {
+  const docentes = {}
+  for (const a of asignaturas) {
+    for (const u of a.expand?.docentes || []) (docentes[u.id] ||= { id: u.id, name: userName(u), codes: [] }).codes.push(a.codigo)
+  }
+  const tutor = curso.expand?.tutor
+  if (tutor && !docentes[tutor.id]) docentes[tutor.id] = { id: tutor.id, name: userName(tutor), codes: [] }
+  if (tutor) docentes[tutor.id].cargo = 'tutor'
+  const estudiantes = alumnos
+    .filter(a => !a.baja)
+    .map(a => ({ id: a.user, name: userName(a.expand?.user) || 'Estudiante', cargo: a.cargo || null }))
+  const byName = (x, y) => x.name.localeCompare(y.name, 'es')
+  return { docentes: Object.values(docentes).sort(byName), estudiantes: estudiantes.sort(byName) }
 }

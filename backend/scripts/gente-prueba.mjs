@@ -5,8 +5,9 @@
  *   PB_ADMIN_EMAIL=… PB_ADMIN_PASS=… node backend/scripts/gente-prueba.mjs crear
  *   PB_ADMIN_EMAIL=… PB_ADMIN_PASS=… node backend/scripts/gente-prueba.mjs borrar
  *
- * crear: cuentas @prueba.novaclass en Sant Josep Obrer (1.º DAW A) con cada cargo, otra escuela con su gente, y los
- *        datos de ejemplo de la app (temas, entregas, exámenes, dudas con respuestas y votos, apuntes) en 1.º DAW A.
+ * crear: cuentas @prueba.novaclass en Sant Josep Obrer con cada cargo (dirección, Tutor y Docentes de 1.º DAW A,
+ *        alumnado con Delegado y Subdelegado, inscrito en las asignaturas), otra escuela con su gente, y los datos de
+ *        ejemplo de la app (temas, entregas, exámenes, dudas con respuestas y votos, apuntes) en cada asignatura.
  * borrar: quita todo lo que creó «crear» (lo apunta en un manifiesto) y deja Sant Josep Obrer como estaba.
  *
  * PB_URL (por defecto http://127.0.0.1:8091) y PRUEBA_MANIFEST (por defecto backend/pb_data/prueba.json).
@@ -21,35 +22,67 @@ const HERE = dirname(new URL(import.meta.url).pathname)
 const PB_URL = (process.env.PB_URL || 'http://127.0.0.1:8091').replace(/\/$/, '')
 const MANIFEST = process.env.PRUEBA_MANIFEST || join(HERE, '../pb_data/prueba.json')
 
-/* Quién es quién. Los nombres de los Estudiantes son los autores de las dudas de ejemplo. */
+/*
+ * Quién es quién. Los nombres de los Estudiantes son los autores de las dudas de ejemplo. Los Docentes de prueba se
+ * suman a las asignaturas de 1.º DAW A (junto a los de verdad) para poder entrar como ellos; «borrar» lo deja como estaba.
+ */
 export const PEOPLE = {
-  director: { name: 'Joana Mascaró Vich', role: 'director' },
-  tutor: { name: 'Catalina Vidal Ripoll', role: 'docente', cargo: 'tutor' },
-  docente1: { name: 'Toni Ferrer Sastre', role: 'docente' },
-  docente2: { name: 'Marga Pons Alzina', role: 'docente' },
-  delegado: { name: 'Aina Pons Mir', role: 'estudiante', cargo: 'delegado' },
-  subdelegado: { name: 'Laia Coll Font', role: 'estudiante', cargo: 'subdelegado' },
-  estudiante1: { name: 'Marta Rosselló Bauzà', role: 'estudiante' },
-  estudiante2: { name: 'Joan Riera Tous', role: 'estudiante' },
-  estudiante3: { name: 'Iker Martí Roca', role: 'estudiante' },
-  'otra-direccion': { name: 'Pere Amengual Coll', role: 'director', otra: true },
-  otra: { name: 'Xisca Bauzà Pujol', role: 'estudiante', otra: true },
+  director: { name: ['Joana', 'Mascaró Vich'], role: 'docente', staff: 'director' },
+  coordinador: { name: ['Bernat', 'Oliver Serra'], role: 'docente', staff: 'coordinador' },
+  tutor: { name: ['Catalina', 'Vidal Ripoll'], role: 'docente', tutor: true, da: ['BD'] },
+  docente1: { name: ['Toni', 'Ferrer Sastre'], role: 'docente', da: ['PRO', 'SI'] },
+  docente2: { name: ['Marga', 'Pons Alzina'], role: 'docente', da: ['LMSGI', 'ED'] },
+  delegado: { name: ['Aina', 'Pons Mir'], role: 'estudiante', cargo: 'delegado' },
+  subdelegado: { name: ['Laia', 'Coll Font'], role: 'estudiante', cargo: 'subdelegado' },
+  estudiante1: { name: ['Marta', 'Rosselló Bauzà'], role: 'estudiante' },
+  estudiante2: { name: ['Joan', 'Riera Tous'], role: 'estudiante' },
+  /* Aún no ha entrado en ninguna asignatura con su código */
+  estudiante3: { name: ['Iker', 'Martí Roca'], role: 'estudiante', sinCodigo: true },
+  'otra-direccion': { name: ['Pere', 'Amengual Coll'], role: 'docente', staff: 'director', otra: true },
+  otra: { name: ['Xisca', 'Bauzà Pujol'], role: 'estudiante', otra: true },
 }
 export const email = key => `${key}@prueba.novaclass`
 
+/* Clave de los datos de ejemplo → código de la asignatura de 1.º DAW A */
+const CODES = { pro: 'PRO', bd: 'BD', lm: 'LMSGI', si: 'SI', ed: 'ED' }
+
 /* Autores de los datos de ejemplo → cuentas de prueba (las respuestas de profes, a los Docentes de prueba) */
 const AUTHOR = {
-  Dracko: 'estudiante3',
+  Dracko: 'estudiante2',
   'Marta Rosselló': 'estudiante1',
   'Joan Riera': 'estudiante2',
-  'Iker Martí': 'estudiante3',
+  'Iker Martí': 'estudiante1',
   'Aina Pons': 'delegado',
   'Laia Coll': 'subdelegado',
   'Pau Mascaró': 'estudiante2',
   'Santiago Gómez': 'docente1',
   'Dustin de Lara': 'docente2',
-  'Miquel Àngel Montero': 'tutor',
+  'Miquel Àngel Montero': 'docente1',
   'Pau Boixader': 'docente1',
+}
+
+/* usuario@escuela como en la migración 1791500400: inicial del nombre + primer apellido + inicial del segundo */
+const clean = x =>
+  x
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, '')
+    .trim()
+export function username(nombre, apellidos, slug) {
+  const PARTICLES = ['de', 'del', 'la', 'las', 'los', 'y', 'i']
+  const out = []
+  let cur = []
+  for (const w of clean(apellidos).split(/\s+/).filter(Boolean)) {
+    cur.push(w)
+    if (!PARTICLES.includes(w)) {
+      out.push(cur.join(''))
+      cur = []
+    }
+  }
+  if (cur.length) out.push(cur.join(''))
+  const [first = '', second = ''] = out
+  return clean(nombre).replace(/ /g, '').slice(0, 1) + first + second.slice(0, 1) + '@' + slug
 }
 
 /* Un PDF mínimo y válido para los apuntes de tipo PDF */
@@ -101,48 +134,78 @@ const filter = f => `?perPage=500&filter=${encodeURIComponent(f)}`
 export async function crear() {
   if (existsSync(MANIFEST)) throw new Error(`Ya hay gente de prueba (${MANIFEST}). Bórrala antes con «borrar».`)
   const T = await adminToken()
-  const made = { users: [], schools: [], events: [], topics: [], dudas: [], apuntes: [] }
+  const made = { users: [], schools: [], festivos: [], events: [], topics: [], dudas: [], apuntes: [], asignaturas: {}, tutor: null }
   const save = () => writeFileSync(MANIFEST, JSON.stringify(made, null, 2))
   const create = async (c, body) => {
     const r = await call(T, 'POST', `/api/collections/${c}/records`, body)
-    if (made[c]) made[c].push(r.id)
+    if (Array.isArray(made[c])) made[c].push(r.id)
     save()
     return r
   }
+  const list = async (c, f) => (await call(T, 'GET', `/api/collections/${c}/records` + filter(f))).items
   save() // el manifiesto existe desde el principio: si algo falla a medias, «borrar» limpia lo que llegó a crearse
 
-  const sjo = (await call(T, 'GET', '/api/collections/schools/records' + filter("name='Sant Josep Obrer'"))).items[0]
+  const sjo = (await list('schools', "slug='santjosepobrer'"))[0]
   if (!sjo) throw new Error('No está Sant Josep Obrer: ¿se han aplicado las migraciones?')
-  const group = (await call(T, 'GET', '/api/collections/groups/records' + filter(`school='${sjo.id}' && name='1.º DAW A'`))).items[0]
-  const modules = Object.fromEntries((await call(T, 'GET', '/api/collections/modules/records?perPage=50')).items.map(m => [m.key, m.id]))
+  const curso = (await list('cursos', `school='${sjo.id}' && name='1.º DAW A'`))[0]
+  const asignaturas = Object.fromEntries((await list('asignaturas', `curso='${curso.id}'`)).map(a => [a.codigo, a]))
 
-  /* Cuentas */
-  const user = {}
-  for (const [key, p] of Object.entries(PEOPLE)) {
-    user[key] = await create('users', { email: email(key), password: PASSWORD, passwordConfirm: PASSWORD, name: p.name, verified: true })
-  }
-
-  /* Sant Josep Obrer: dirección y 1.º DAW A */
-  await create('school_staff', { school: sjo.id, user: user.director.id, role: 'director' })
-  for (const [key, p] of Object.entries(PEOPLE)) {
-    if (p.otra || p.role === 'director') continue
-    await create('memberships', { group: group.id, user: user[key].id, role: p.role, cargo: p.cargo || '' })
-  }
-
-  /* Otra escuela (sin verificar): quien la crea queda como Director por el hook */
-  const otra = await create('schools', { name: 'Escuela de Prueba', city: 'Inca', created_by: user['otra-direccion'].id })
-  const smx = await call(T, 'POST', '/api/collections/groups/records', {
+  /* Otra escuela (sin verificar) con su curso */
+  const otra = await create('schools', { name: 'Escuela de Prueba', slug: 'escueladeprueba', city: 'Inca' })
+  const smx = await call(T, 'POST', '/api/collections/cursos/records', {
     school: otra.id,
     name: '1.º SMX A',
     course: '26/27',
     sessions: [{ start: '08:00', end: '08:55' }],
   })
-  await create('memberships', { group: smx.id, user: user.otra.id, role: 'estudiante' })
 
-  /* Datos de ejemplo de la app en 1.º DAW A */
+  /* Cuentas de la escuela (la contraseña ya está cambiada, para poder entrar sin más) */
+  const user = {}
+  for (const [key, p] of Object.entries(PEOPLE)) {
+    const school = p.otra ? otra : sjo
+    const [nombre, apellidos] = p.name
+    user[key] = await create('users', {
+      email: email(key),
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
+      nombre,
+      apellidos,
+      name: nombre + ' ' + apellidos,
+      username: username(nombre, apellidos, school.slug),
+      school: school.id,
+      role: p.role,
+      verified: true,
+    })
+    if (p.staff) await create('school_staff', { school: school.id, user: user[key].id, role: p.staff })
+  }
+
+  /* 1.º DAW A: Tutor, Docentes de prueba en sus asignaturas, alumnado con cargos y con el código de las asignaturas */
+  made.tutor = { curso: curso.id, before: curso.tutor || '' }
+  save()
+  for (const [key, p] of Object.entries(PEOPLE)) {
+    if (p.tutor) await call(T, 'PATCH', `/api/collections/cursos/records/${curso.id}`, { tutor: user[key].id })
+    for (const codigo of p.da || []) {
+      const a = asignaturas[codigo]
+      made.asignaturas[a.id] ??= a.docentes
+      save()
+      a.docentes = [...a.docentes, user[key].id]
+      await call(T, 'PATCH', `/api/collections/asignaturas/records/${a.id}`, { docentes: a.docentes })
+    }
+    if (p.role !== 'estudiante') continue
+    if (p.otra) {
+      await create('curso_alumnos', { curso: smx.id, user: user[key].id })
+      continue
+    }
+    await create('curso_alumnos', { curso: curso.id, user: user[key].id, cargo: p.cargo || '' })
+    if (p.sinCodigo) continue
+    for (const a of Object.values(asignaturas)) if (a.activa) await create('inscripciones', { asignatura: a.id, user: user[key].id })
+  }
+
+  /* Datos de ejemplo de la app en sus asignaturas */
+  const asig = key => asignaturas[CODES[key]].id
   for (const [key, temas] of Object.entries(TEMAS)) {
     for (const [i, [title, status]] of temas.entries()) {
-      await create('topics', { group: group.id, module: modules[key], title, status, order: i })
+      await create('topics', { asignatura: asig(key), title, status, order: i })
     }
   }
 
@@ -150,8 +213,7 @@ export async function crear() {
   for (const d of DUDAS) {
     const author = user[AUTHOR[d.author]]
     const duda = await create('dudas', {
-      group: group.id,
-      module: modules[d.subject],
+      asignatura: asig(d.subject),
       author: author.id,
       title: d.title,
       body: d.body,
@@ -176,18 +238,21 @@ export async function crear() {
     await vote(d.votes, author.id, { duda: duda.id })
   }
 
-  /* Votos: tantos «+1» como votos tenía en el ejemplo, hasta la gente de la clase que haya (sin votarse a uno mismo) */
+  /* Votos: tantos «+1» como votos tenía en el ejemplo, hasta el alumnado inscrito que haya (sin votarse a uno mismo) */
   async function vote(n, authorId, target) {
     const voters = Object.entries(PEOPLE)
-      .filter(([k, p]) => !p.otra && p.role !== 'director' && user[k].id !== authorId)
+      .filter(([k, p]) => !p.otra && p.role === 'estudiante' && !p.sinCodigo && user[k].id !== authorId)
       .slice(0, Math.max(0, n))
     for (const [k] of voters) await create('votes', { user: user[k].id, value: 1, ...target })
   }
 
   for (const e of EVENTS) {
+    if (e.type === 'festivo') {
+      await create('festivos', { school: sjo.id, title: e.title, date: e.date })
+      continue
+    }
     const ev = await create('events', {
-      group: group.id,
-      module: e.subject ? modules[e.subject] : '',
+      asignatura: asig(e.subject),
       type: e.type,
       title: e.title,
       date: e.date,
@@ -209,14 +274,7 @@ export async function crear() {
     const author = user[AUTHOR[a.author]]
     if (a.type === 'pdf') {
       const form = new FormData()
-      for (const [k, v] of Object.entries({
-        group: group.id,
-        module: modules[a.subject],
-        author: author.id,
-        type: 'pdf',
-        title: a.title,
-        tema: a.tema,
-      })) {
+      for (const [k, v] of Object.entries({ asignatura: asig(a.subject), author: author.id, type: 'pdf', title: a.title, tema: a.tema })) {
         form.append(k, v)
       }
       form.append('downloads', String(a.downloads || 0))
@@ -226,8 +284,7 @@ export async function crear() {
       await create('apuntes', form)
     } else {
       await create('apuntes', {
-        group: group.id,
-        module: modules[a.subject],
+        asignatura: asig(a.subject),
         author: author.id,
         type: a.type,
         title: a.title,
@@ -260,8 +317,12 @@ export async function borrar() {
       if (!String(err.message).includes('→ 404')) throw err // ya no estaba (borrado en cascada)
     }
   }
-  /* Primero el contenido (las respuestas y votos caen con sus dudas), luego las escuelas y al final la gente */
-  for (const c of ['apuntes', 'dudas', 'events', 'topics', 'schools', 'users']) {
+  /* Primero se devuelven Tutor y Docentes de verdad; luego el contenido, la otra escuela y al final la gente */
+  if (made.tutor) await call(T, 'PATCH', `/api/collections/cursos/records/${made.tutor.curso}`, { tutor: made.tutor.before })
+  for (const [id, docentes] of Object.entries(made.asignaturas || {})) {
+    await call(T, 'PATCH', `/api/collections/asignaturas/records/${id}`, { docentes })
+  }
+  for (const c of ['apuntes', 'dudas', 'events', 'topics', 'festivos', 'schools', 'users']) {
     for (const id of [...(made[c] || [])].reverse()) await del(c, id)
   }
   rmSync(MANIFEST)

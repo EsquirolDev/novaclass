@@ -69,7 +69,7 @@ export function StoreProvider({ children }) {
 
   const update = useCallback(fn => setState(s => ({ ...s, ...fn(s) })), [])
 
-  /* Entregas, exámenes y temas: los de la clase cargada de PocketBase o, sin ella, los de ejemplo */
+  /* Entregas, exámenes y temas: los del curso cargado de PocketBase o, sin ella, los de ejemplo */
   const clase = useClase()
   const { user: authUser } = useAuth()
   const real = clase.status === 'ready'
@@ -98,7 +98,7 @@ export function StoreProvider({ children }) {
   const dudas = useMemo(
     () =>
       real
-        ? toDudas({ ...clase.qa, uid: authUser?.id, members: clase.members, now })
+        ? toDudas({ ...clase.qa, uid: authUser?.id, teachers: clase.teachers, now })
         : mergeDudas({
             seed: DUDAS,
             own: state.dudas,
@@ -111,7 +111,7 @@ export function StoreProvider({ children }) {
           }),
     // now se deja fuera a propósito: «hace 5 min» se actualiza con el resto de cambios, no cada 30 s
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [real, clase.qa, clase.members, authUser?.id, state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
+    [real, clase.qa, clase.teachers, authUser?.id, state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
   )
 
   /* Apuntes: los de la clase en PocketBase o, sin ella, los de ejemplo más los subidos en este navegador */

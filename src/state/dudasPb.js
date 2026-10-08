@@ -4,19 +4,21 @@ import { pb } from '../lib/pb.js'
 import { pickEditable } from './dudas.js'
 
 /*
- * Dudas contra PocketBase para la clase cargada (state.qa = { dudas, answers, votes } en crudo, como llegan).
+ * Dudas contra PocketBase para el curso cargado (las de sus asignaturas que la persona puede ver) (state.qa = { dudas, answers, votes } en crudo, como llegan).
  * Votar y aceptar se ven al momento y se deshacen si fallan; preguntar, responder y editar esperan al servidor
  * (devuelven una promesa) porque necesitan el registro que crea. Las borradas se marcan con deleted para poder
  * deshacer. En tiempo real llegan las dudas, respuestas y votos de los demás.
  */
-export const QA_EXPAND = { dudas: 'author,module', answers: 'author' }
+export const QA_EXPAND = { dudas: 'author', answers: 'author' }
 
-export async function loadQa(groupId) {
-  const byGroup = pb.filter('duda.group = {:g}', { g: groupId })
+export async function loadQa(cursoId) {
+  const byCurso = pb.filter('duda.asignatura.curso = {:c}', { c: cursoId })
   const [dudas, answers, votes] = await Promise.all([
-    pb.collection('dudas').getFullList({ filter: pb.filter('group = {:g}', { g: groupId }), expand: QA_EXPAND.dudas, sort: '-created' }),
-    pb.collection('answers').getFullList({ filter: byGroup, expand: QA_EXPAND.answers, sort: 'created' }),
-    pb.collection('votes').getFullList({ filter: byGroup }),
+    pb
+      .collection('dudas')
+      .getFullList({ filter: pb.filter('asignatura.curso = {:c}', { c: cursoId }), expand: QA_EXPAND.dudas, sort: '-created' }),
+    pb.collection('answers').getFullList({ filter: byCurso, expand: QA_EXPAND.answers, sort: 'created' }),
+    pb.collection('votes').getFullList({ filter: byCurso }),
   ])
   return { dudas, answers, votes }
 }
@@ -26,15 +28,15 @@ const without = (list, id) => list.filter(x => x.id !== id)
 
 export function useDudasPb({ state, setState, uid, setSaveError }) {
   const ready = state.status === 'ready'
-  const groupId = ready ? state.group.id : null
+  const cursoId = ready ? state.curso.id : null
   const stateRef = useRef(state)
   stateRef.current = state
   const queues = useRef({})
 
   /* Cambia una de las listas crudas (dudas, answers o votes) */
   const edit = useCallback(
-    (kind, fn) => setState(s => (s.status !== 'ready' || s.group.id !== groupId ? s : { ...s, qa: { ...s.qa, [kind]: fn(s.qa[kind]) } })),
-    [setState, groupId],
+    (kind, fn) => setState(s => (s.status !== 'ready' || s.curso.id !== cursoId ? s : { ...s, qa: { ...s.qa, [kind]: fn(s.qa[kind]) } })),
+    [setState, cursoId],
   )
   const fail = useCallback(() => setSaveError('No se ha podido guardar. Revisa la conexión y vuelve a intentarlo.'), [setSaveError])
   /* Una cola por clave: los cambios de una misma cosa se envían en orden */
@@ -42,24 +44,22 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
     queues.current[k] = (queues.current[k] || Promise.resolve()).then(run)
     return queues.current[k]
   }
-  const moduleId = key => stateRef.current.moduleIds?.[key] || ''
-
   const addDuda = useCallback(
     async ({ subject, title, body = '', code = '', tags = [] }) => {
       const rec = await pb
         .collection('dudas')
-        .create({ group: groupId, module: moduleId(subject), author: uid, title, body, code, tags }, { expand: QA_EXPAND.dudas })
+        .create({ asignatura: subject, author: uid, title, body, code, tags }, { expand: QA_EXPAND.dudas })
       edit('dudas', l => upsert(l, rec))
       return rec.id
     },
-    [groupId, uid, edit],
+    [uid, edit],
   )
 
   const editDuda = useCallback(
     async (id, fields) => {
       const f = pickEditable(fields)
       if ('subject' in f) {
-        f.module = moduleId(f.subject)
+        f.asignatura = f.subject
         delete f.subject
       }
       const rec = await pb.collection('dudas').update(id, { ...f, edited: true }, { expand: QA_EXPAND.dudas })
@@ -114,7 +114,7 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
   useEffect(() => {
     serverVotes.current = {}
     for (const v of stateRef.current.qa?.votes || []) if (v.user === uid) serverVotes.current[v.duda + ':' + (v.answer || '')] = v
-  }, [groupId, uid])
+  }, [cursoId, uid])
 
   const vote = useCallback(
     (voteKey, dir) => {
@@ -154,7 +154,7 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
 
   /* Tiempo real: lo de los demás (lo propio ya está en pantalla); los borrados, de cualquiera */
   useEffect(() => {
-    if (!groupId) return undefined
+    if (!cursoId) return undefined
     let alive = true
     const offs = []
     const keep = off => (alive ? offs.push(off) : off())
@@ -172,26 +172,26 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
           expand ? { expand } : undefined,
         )
         .then(keep, () => {})
-    listen('dudas', 'author', r => r.group === groupId, QA_EXPAND.dudas)
+    listen('dudas', 'author', r => stateRef.current.asignaturas?.some(a => a.id === r.asignatura), QA_EXPAND.dudas)
     listen('answers', 'author', r => inClass(r.duda), QA_EXPAND.answers)
     listen('votes', 'user', r => inClass(r.duda))
     return () => {
       alive = false
       offs.forEach(off => off())
     }
-  }, [groupId, uid, edit])
+  }, [cursoId, uid, edit])
 
   /*
    * PocketBase no avisa en tiempo real cuando un cambio hace invisible una duda (al borrarla, deja de estar permitida
    * para los demás). Por eso, al volver a la pestaña y cada minuto, se comprueba qué dudas siguen existiendo (solo ids).
    */
   useEffect(() => {
-    if (!groupId) return undefined
+    if (!cursoId) return undefined
     async function resync() {
       if (document.visibilityState === 'hidden') return
       const alive = await pb
         .collection('dudas')
-        .getFullList({ fields: 'id', filter: pb.filter('group = {:g}', { g: groupId }) })
+        .getFullList({ fields: 'id', filter: pb.filter('asignatura.curso = {:c}', { c: cursoId }) })
         .catch(() => null)
       if (!alive) return
       const ids = new Set(alive.map(x => x.id))
@@ -203,7 +203,7 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
       clearInterval(t)
       document.removeEventListener('visibilitychange', resync)
     }
-  }, [groupId, edit])
+  }, [cursoId, edit])
 
   /* Visita a una duda: una vez por sesión y duda; el servidor suma y devuelve la cifra */
   const visit = useCallback(

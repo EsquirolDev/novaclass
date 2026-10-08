@@ -104,8 +104,8 @@ export const PLAN = [
   },
   {
     id: 'cuentas',
-    title: 'Cuentas, escuelas y clases',
-    goal: 'Que cada persona entre con su cuenta y vea lo de su escuela y su clase.',
+    title: 'Cuentas, escuelas y cursos',
+    goal: 'Que cada persona entre con su cuenta y vea lo de su escuela, su curso y sus asignaturas.',
     tasks: [
       {
         id: 'landing',
@@ -115,32 +115,56 @@ export const PLAN = [
       },
       {
         id: 'login',
-        title: 'Registro e inicio de sesión',
+        title: 'Inicio de sesión',
         detail:
-          'Hecho y encendido (VITE_AUTH=off lo apaga): crear cuenta, entrar, salir y pedir el enlace de recuperación. Falta: configurar el correo (SMTP) y verificar el correo al registrarse.',
+          'Hecho y encendido (VITE_AUTH=off lo apaga): entrar con correo o con usuario@escuela, salir y pedir el enlace de recuperación. Falta: configurar el correo (SMTP). El registro libre se quita en la fase 2.',
+      },
+      {
+        id: 'modelo-v2',
+        title: 'Fase 1: cursos y asignaturas',
+        detail:
+          'Hecho: escuelas con nombre corto, Director y Coordinador; cursos con su Tutor y su alumnado; asignaturas con color, forma y Docentes; horario por curso; reglas y tests. Sant Josep Obrer pasado al modelo nuevo y la app adaptada.',
+        done: true,
       },
       {
         id: 'grupo',
-        title: 'Unirse a una clase con código',
+        title: 'Entrar en cada asignatura con su código',
         detail:
-          'Hecho: quien tiene cuenta escribe el código de su clase y entra como Estudiante (desde la pantalla de sin clase o desde «Tu clase»). Tutor y dirección ven, copian y cambian el código en «Tu clase». Selector de clase si estás en más de una.',
+          'Hecho: el alumnado del curso escribe el código de una asignatura (en Asignaturas o en «Tu clase») y entra en su espacio. Sus Docentes y la dirección ven, copian y cambian cada código en «Tu clase». Selector de curso si tienes varios.',
         done: true,
       },
       {
         id: 'cuentas-escuela',
-        title: 'Cuentas creadas por la escuela',
+        title: 'Fase 2: cuentas creadas por la escuela',
         detail:
-          'Nombre corto de la escuela (santjosepobrer), entrar con usuario@escuela, alta de una persona o de una lista con contraseña temporal que se cambia al entrar, reseteo por el Tutor y correo de recuperación opcional.',
+          'Alta de una persona o de una lista (nombre, apellidos, NIA y curso) con usuario@escuela automático y contraseña temporal que se cambia al entrar; reseteo por el Tutor; correo de recuperación opcional. Sin registro libre.',
+      },
+      {
+        id: 'espacio',
+        title: 'Fase 3: el Docente abre el espacio de su asignatura',
+        detail:
+          'De las asignaturas que le ha puesto la dirección en el horario, el Docente abre su espacio (entregas, exámenes, apuntes y dudas) y elige código, color y forma de la paleta, que salen al azar.',
+      },
+      {
+        id: 'horario-app',
+        title: 'Fase 4: la dirección monta el horario',
+        detail: 'Franjas y patio de la escuela, asignaturas de cada curso con sus Docentes, y el horario de la semana, desde la app.',
+      },
+      {
+        id: 'bajas',
+        title: 'Fase 5: bajas',
+        detail:
+          'Baja de una asignatura (la pide el Estudiante y la acepta el Tutor; deja de ver solo esas horas) y baja del curso (deja de ver todo el curso).',
       },
       {
         id: 'roles',
-        title: 'Gestión de la clase: miembros y cargos',
-        detail: 'Pantallas para que Director y Tutor añadan gente y nombren Tutor, Delegado y Subdelegado.',
+        title: 'Gestión del curso: alumnado y cargos',
+        detail: 'Pantallas para que la dirección ponga el alumnado en su curso y nombre Tutor, y el Tutor nombre Delegado y Subdelegado.',
       },
       {
         id: 'escuela',
-        title: 'Crear escuela y verificación',
-        detail: 'Cualquiera crea su escuela y queda como Director; la administración la marca como verificada.',
+        title: 'Alta de escuelas y verificación',
+        detail: 'De momento las da de alta la administración de la plataforma, que también las marca como verificadas.',
       },
       { id: 'perfil', title: 'Perfil y ajustes', detail: 'Nombre, avatar, tema claro u oscuro y qué avisos quiere recibir.' },
     ],

@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react'
-import { Avatar, Button, Card, ConfirmDialog, Icon, JoinForm } from '../components/index.js'
+import { Avatar, Button, Card, ConfirmDialog, Icon, JoinForm, SubjectTag } from '../components/index.js'
 import { formatCode } from '../lib/codes.js'
+import { useAuth } from '../state/auth.jsx'
 import { useClase } from '../state/clase.jsx'
 
 const CARGO = { tutor: 'Tutor', delegado: 'Delegado', subdelegado: 'Subdelegado' }
-const personName = m => m.expand?.user?.name || m.pending_name || 'Alguien'
 
 /*
- * Tu clase: quién hay (Docentes con el Tutor, Estudiantes con Delegado y Subdelegado), el código para que entre gente
- * (solo lo ven el Tutor y la dirección) y entrar en otra clase con su código.
+ * Tu clase (el curso): quién hay (Docentes con el Tutor, Estudiantes con Delegado y Subdelegado), los códigos de las
+ * asignaturas para que entre el alumnado (solo los ven sus Docentes y la dirección) y, para quien aún no ha entrado en
+ * alguna asignatura, dónde escribir su código.
  */
 export default function TuClase() {
   const clase = useClase()
-  const { group, school, members = [], me } = clase
-  const canCode = me?.cargo === 'tutor' || me?.director
-  const sorted = list => [...list].sort((a, b) => (a.cargo ? 0 : 1) - (b.cargo ? 0 : 1) || personName(a).localeCompare(personName(b), 'es'))
-  const docentes = sorted(members.filter(m => m.role === 'docente'))
-  const estudiantes = sorted(members.filter(m => m.role === 'estudiante'))
-
-  if (!group) return null
+  const { user } = useAuth()
+  const { curso, school, people, me, asignaturas = [], locked = [] } = clase
+  if (!curso || !people) return null
+  const byCargo = list => [...list].sort((a, b) => (a.cargo ? 0 : 1) - (b.cargo ? 0 : 1))
+  const docentes = byCargo(people.docentes)
+  const estudiantes = byCargo(people.estudiantes)
+  const withCode = asignaturas.filter(a => a.activa && (me?.director || (a.docentes || []).includes(user?.id)))
   return (
     <div className="nc-screen">
       <main className="nc-pad nc-clase">
@@ -28,9 +29,9 @@ export default function TuClase() {
               {school?.name}
               {school?.verified ? <Icon name="shield" size={15} label="Escuela verificada" /> : null}
             </p>
-            <h1 className="na-t-display-xl">{group.name}</h1>
+            <h1 className="na-t-display-xl">{curso.name}</h1>
             <p className="na-t-subtitle na-muted">
-              Curso {group.course} · {docentes.length} Docentes · {estudiantes.length} Estudiantes
+              Curso {curso.course} · {docentes.length} Docentes · {estudiantes.length} Estudiantes
             </p>
           </div>
         </div>
@@ -40,13 +41,32 @@ export default function TuClase() {
             <PeopleCard title="Estudiantes" list={estudiantes} />
           </div>
           <aside className="nc-side">
-            {canCode ? <CodeCard groupId={group.id} /> : null}
-            <Card title="Entrar en otra clase">
-              <p className="na-t-label na-muted" style={{ margin: '0 0 12px' }}>
-                Si también vas a otra clase, escribe su código.
-              </p>
-              <JoinForm />
-            </Card>
+            {withCode.length ? (
+              <Card title={withCode.length > 1 ? 'Códigos de las asignaturas' : 'Código de la asignatura'}>
+                <p className="na-t-label na-muted" style={{ margin: '0 0 14px' }}>
+                  Con el código, el alumnado del curso entra en el espacio de la asignatura (entregas, apuntes y dudas). Solo los ven sus
+                  Docentes y la dirección.
+                </p>
+                <div className="nc-codes">
+                  {withCode.map(a => (
+                    <CodeRow key={a.id} asignatura={a} />
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+            {locked.length ? (
+              <Card title="Entrar en una asignatura">
+                <p className="na-t-label na-muted" style={{ margin: '0 0 12px' }}>
+                  Aún no has entrado en {locked.length > 1 ? 'estas asignaturas' : 'esta asignatura'}. Pide el código a quien la da.
+                </p>
+                <div className="nc-locked">
+                  {locked.map(id => (
+                    <SubjectTag key={id} subject={id} />
+                  ))}
+                </div>
+                <JoinForm />
+              </Card>
+            ) : null}
           </aside>
         </div>
       </main>
@@ -59,14 +79,14 @@ function PeopleCard({ title, list }) {
     <Card title={`${title} · ${list.length}`}>
       {list.length ? (
         <ul className="nc-people">
-          {list.map(m => (
-            <li key={m.id}>
-              <Avatar name={personName(m)} size={36} />
+          {list.map(p => (
+            <li key={p.id}>
+              <Avatar name={p.name} size={36} />
               <span className="nm">
-                {personName(m)}
-                {!m.user ? <small>Aún no ha entrado en NovaClass</small> : null}
+                {p.name}
+                {p.codes?.length ? <small>{p.codes.join(' · ')}</small> : null}
               </span>
-              {m.cargo ? <span className="nc-cargo">{CARGO[m.cargo]}</span> : null}
+              {p.cargo ? <span className="nc-cargo">{CARGO[p.cargo]}</span> : null}
             </li>
           ))}
         </ul>
@@ -79,8 +99,9 @@ function PeopleCard({ title, list }) {
   )
 }
 
-/* El código para que entre gente: se ve, se copia y se cambia si se ha filtrado */
-function CodeCard({ groupId }) {
+/* El código de una asignatura: se ve, se copia y se cambia si se ha filtrado */
+function CodeRow({ asignatura }) {
+  const id = asignatura.id
   const { getCode, newCode } = useClase()
   const [code, setCode] = useState(null)
   const [error, setError] = useState(null)
@@ -89,14 +110,14 @@ function CodeCard({ groupId }) {
 
   useEffect(() => {
     let alive = true
-    getCode(groupId).then(
+    getCode(id).then(
       c => alive && setCode(c),
       () => alive && setError('No se ha podido cargar el código.'),
     )
     return () => {
       alive = false
     }
-  }, [groupId, getCode])
+  }, [id, getCode])
 
   async function copy() {
     try {
@@ -109,10 +130,8 @@ function CodeCard({ groupId }) {
   }
 
   return (
-    <Card title="Código de la clase">
-      <p className="na-t-label na-muted" style={{ margin: '0 0 14px' }}>
-        Con él, quien tenga cuenta entra en la clase como Estudiante. Solo lo ves tú (Tutor) y la dirección.
-      </p>
+    <div className="nc-code-row">
+      <SubjectTag subject={id} showName />
       {code ? (
         <>
           <p className="nc-code" aria-label={'Código: ' + code.split('').join(' ')}>
@@ -139,20 +158,20 @@ function CodeCard({ groupId }) {
       <ConfirmDialog
         open={confirming}
         icon="alert"
-        title="¿Cambiar el código de la clase?"
+        title={`¿Cambiar el código de ${asignatura.codigo}?`}
         confirmLabel="Cambiar código"
         onCancel={() => setConfirming(false)}
         onConfirm={async () => {
           setConfirming(false)
           try {
-            setCode(await newCode(groupId))
+            setCode(await newCode(id))
           } catch {
             setError('No se ha podido cambiar el código.')
           }
         }}
       >
-        El código actual dejará de servir. Quien ya está en la clase sigue dentro; solo cambia para quien entre a partir de ahora.
+        El código actual dejará de servir. Quien ya ha entrado sigue dentro; solo cambia para quien entre a partir de ahora.
       </ConfirmDialog>
-    </Card>
+    </div>
   )
 }

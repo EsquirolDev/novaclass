@@ -8,7 +8,8 @@ const dudas = [
     title: 'Vieja',
     body: 'x',
     author: 'u1',
-    expand: { author: { name: 'Ana' }, module: { key: 'bd' } },
+    asignatura: 'bd',
+    expand: { author: { name: 'Ana' } },
     accepted: 'a2',
     tags: ['sql'],
     views: 4,
@@ -17,7 +18,8 @@ const dudas = [
     title: 'Nueva',
     body: 'y',
     author: 'u2',
-    expand: { author: { name: 'Luis' }, module: { key: 'pro' } },
+    asignatura: 'pro',
+    expand: { author: { name: 'Luis' } },
   }),
   rec('d3', '2026-10-08 15:50:00.000Z', { title: 'Borrada', body: 'z', author: 'u1', deleted: true, expand: {} }),
 ]
@@ -37,10 +39,10 @@ const votes = [
   { duda: 'd1', answer: '', user: 'u3', value: 1 },
   { duda: 'd1', answer: 'a2', user: 'u1', value: 1 },
 ]
-const members = [{ user: 'u3', role: 'docente' }]
+const teachers = ['u3']
 
 describe('dudas desde PocketBase', () => {
-  const out = toDudas({ dudas, answers, votes, uid: 'u1', members, now })
+  const out = toDudas({ dudas, answers, votes, uid: 'u1', teachers, now })
 
   it('sin las borradas y las más nuevas primero', () => {
     expect(out.map(d => d.title)).toEqual(['Nueva', 'Vieja'])

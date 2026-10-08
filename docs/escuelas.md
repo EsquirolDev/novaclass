@@ -1,110 +1,83 @@
-# Escuelas, clases y cargos
+# Escuelas, cursos y asignaturas
 
-Plan acordado el 8 de octubre de 2026. Sustituye a `users.role` y `users.group` del primer modelo, que solo permitían una clase por persona y no tenían ni escuela ni cargos.
+Modelo v2, acordado el 8 de octubre de 2026. Sustituye al primero (clases con `memberships` y un código por clase): **curso** y **asignatura** no son lo mismo, y las cuentas las crea la escuela.
 
 ## Estructura
 
 ```
-Escuela (Sant Josep Obrer · verificada)
-├─ Dirección: Director(es)
-└─ Clases (1.º DAW A · 26/27)
-   ├─ Docentes … y un Tutor (uno de ellos)
-   └─ Estudiantes … con un Delegado y un Subdelegado
+Escuela (Sant Josep Obrer · santjosepobrer · verificada)
+├─ Dirección: Director(es) y Coordinador(es)
+├─ Festivos
+└─ Cursos (1.º DAW A · 26/27)
+   ├─ Tutor (un Docente de la escuela)
+   ├─ Alumnado: Estudiantes, con un Delegado y un Subdelegado
+   ├─ Franjas y patio
+   └─ Asignaturas (PRO, BD…): color, forma, código, sus Docentes
+      ├─ Horario: qué hora del curso es de qué asignatura y quién la da
+      └─ Espacio: entregas, exámenes, temas, apuntes y dudas
 ```
 
-- **Escuelas.** Cualquiera puede crear una escuela y queda como Director. Solo la administración de la plataforma (de momento Sergi, como superuser de PocketBase) puede marcarla como **verificada**, y en la app se distingue de las demás.
-- **Varias clases por persona.** Un Docente da clase en varias, y un Estudiante también puede estar en más de una (por ejemplo, si repite módulos). Si estás en más de una, la app tiene un selector de clase.
-- **Varios Directores** por escuela.
+- **Curso.** Un grupo de alumnado de un año (1.º DAW A, 26/27). A cada Estudiante lo pone en su curso la escuela al crear su cuenta: al curso no se entra con código.
+- **Asignatura.** Lo que en el primer modelo era «clase» o «módulo». Un Docente puede dar asignaturas en varios cursos; un Estudiante tiene las de su curso.
+- **Espacio de la asignatura.** Lo abre su Docente (`activa`). El alumnado del curso entra con el **código de la asignatura**; hasta entonces, la asignatura solo sale en su horario.
+- **Horario.** Lo monta la dirección (Director o Coordinador), nunca un Docente ni el alumnado.
+- **Etiqueta.** Cada asignatura tiene código, color y forma de una paleta fija (`azul`, `naranja`, `violeta`, `verde`, `amarillo`, `cian`, `rosa`, `lima`; las formas de `src/components/Sigil.jsx`). Al crearla salen al azar y se pueden cambiar.
+- **Escuelas verificadas.** Solo la administración de la plataforma (de momento Sergi, como superuser) puede verificar una escuela.
 
 ## Nombres de los cargos
 
-No se pide el género a nadie. Los nombres son siempre los mismos, en la app y en la base de datos:
+No se pide el género a nadie. Los nombres son siempre los mismos:
 
-| Cargo       | En la app   | Valor en la base de datos           |
-| ----------- | ----------- | ----------------------------------- |
-| Estudiante  | Estudiante  | `memberships.role = 'estudiante'`   |
-| Docente     | Docente     | `memberships.role = 'docente'`      |
-| Delegado    | Delegado    | `memberships.cargo = 'delegado'`    |
-| Subdelegado | Subdelegado | `memberships.cargo = 'subdelegado'` |
-| Tutor       | Tutor       | `memberships.cargo = 'tutor'`       |
-| Director    | Director    | `school_staff.role = 'director'`    |
+| Cargo       | Valor en la base de datos             |
+| ----------- | ------------------------------------- |
+| Estudiante  | `users.role = 'estudiante'`           |
+| Docente     | `users.role = 'docente'`              |
+| Delegado    | `curso_alumnos.cargo = 'delegado'`    |
+| Subdelegado | `curso_alumnos.cargo = 'subdelegado'` |
+| Tutor       | `cursos.tutor`                        |
+| Director    | `school_staff.role = 'director'`      |
+| Coordinador | `school_staff.role = 'coordinador'`   |
 
 En plural: «Estudiantes», «Docentes», «Dirección».
 
-## Modelo (cambios sobre `docs/backend.md`)
+## Cuentas
 
-| Colección              | Qué guarda                                                                                                                                                                                                     |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schools` (nueva)      | `name`, `city`, `verified` (solo la cambia la administración), `created_by`                                                                                                                                    |
-| `school_staff` (nueva) | `school`, `user`, `role` = `director`                                                                                                                                                                          |
-| `groups`               | Pasa a tener `school`; el resto igual (nombre, curso, código, franjas, patio)                                                                                                                                  |
-| `memberships` (nueva)  | `group`, `user` (vacío si aún no tiene cuenta), `role` (`estudiante` o `docente`), `cargo` (`delegado`, `subdelegado`, `tutor` u opcional), `pending_name` e `invite_email` para quien aún no se ha registrado |
-| `users`                | Pierde `role` y `group`                                                                                                                                                                                        |
-| `schedule`             | `teacher` pasa a apuntar a la `membership` de un Docente, así vale aunque aún no tenga cuenta                                                                                                                  |
-| `teachers`             | Desaparece: los Docentes son personas de la clase                                                                                                                                                              |
+Las crea la escuela (Director o Coordinador), de una en una o pegando una lista. No hay registro libre.
 
-**Restricciones que garantiza la base de datos:**
+- **Datos:** nombre, apellidos, NIA (el ID del centro; solo lo ven el Director y el Tutor) y, si es Estudiante, su curso.
+- **Usuario:** sale solo con el formato `usuario@escuela`: inicial del nombre, primer apellido e inicial del segundo, más el nombre corto de la escuela. Sergi Coll Pastor → `scollp@santjosepobrer`; si ya existe, `scollp2`. Las partículas van con el apellido (Dustin de Lara Garcia → `ddelarag`). No es un correo.
+- **Contraseña:** una temporal que hay que cambiar al entrar (`must_change_password`). Si alguien la olvida, la resetea el Tutor o la dirección.
+- **Correo personal:** opcional, para recuperar la contraseña sin pedirlo a nadie.
 
-- Como mucho un Tutor, un Delegado y un Subdelegado por clase.
-- El Tutor es Docente de esa clase, y el Delegado y el Subdelegado son Estudiantes de ella.
-- Una persona aparece una sola vez en cada clase.
+## Bajas
+
+- **Baja de una asignatura** (por ejemplo, quien convalida IPO): la pide el Estudiante y la acepta el Tutor del curso. Deja de ver solo las horas y el espacio de esa asignatura.
+- **Baja del curso** (`curso_alumnos.baja`): deja de ver todo lo del curso. La da la dirección.
 
 ## Quién puede hacer qué
 
-|                                            | Administración | Director | Tutor | Docente | Delegado y Subdelegado | Estudiante |
-| ------------------------------------------ | :------------: | :------: | :---: | :-----: | :--------------------: | :--------: |
-| Verificar una escuela                      |       ✓        |          |       |         |                        |            |
-| Editar la escuela                          |       ✓        |    ✓     |       |         |                        |            |
-| Crear clases en la escuela                 |       ✓        |    ✓     |       |         |                        |            |
-| Añadir o quitar gente de la clase          |       ✓        |    ✓     |   ✓   |         |                        |            |
-| Nombrar Tutor                              |       ✓        |    ✓     |       |         |                        |            |
-| Nombrar Delegado y Subdelegado             |       ✓        |    ✓     |   ✓   |         |                        |            |
-| Horario, temas, entregas y exámenes        |       ✓        |    ✓     |   ✓   |    ✓    |           ✓            |            |
-| Moderar dudas y apuntes (ocultar o borrar) |       ✓        |    ✓     |   ✓   |    ✓    |                        |            |
-| Preguntar, responder, votar, subir apuntes |                |          |   ✓   |    ✓    |           ✓            |     ✓      |
-| Marcar lo suyo como hecho                  |                |          |       |         |           ✓            |     ✓      |
+|                                                                | Dirección | Tutor | Docente de la asignatura | Delegado y Subdelegado |    Estudiante     |
+| -------------------------------------------------------------- | :-------: | :---: | :----------------------: | :--------------------: | :---------------: |
+| Editar la escuela (sin verificarla ni cambiar su nombre corto) |     ✓     |       |                          |                        |                   |
+| Cursos, alumnado, asignaturas, horario y festivos              |     ✓     |       |                          |                        |                   |
+| Nombrar Delegado y Subdelegado                                 |     ✓     |   ✓   |                          |                        |                   |
+| Etiqueta de la asignatura y abrir su espacio                   |     ✓     |       |            ✓             |                        |                   |
+| Ver y cambiar el código de la asignatura                       |     ✓     |       |            ✓             |                        |                   |
+| Entregas, exámenes y temas                                     |     ✓     |       |            ✓             |   ✓ (si ha entrado)    |                   |
+| Moderar dudas y apuntes                                        |     ✓     |       |            ✓             |                        |                   |
+| Preguntar, responder, votar, subir apuntes                     |           |       |            ✓             |   ✓ (si ha entrado)    | ✓ (si ha entrado) |
+| Marcar lo suyo como hecho y ponerse nota                       |           |       |                          |   ✓ (si ha entrado)    | ✓ (si ha entrado) |
 
-Para entrar en una clase hay dos caminos: el **código de la clase** o que te añada un Director o el Tutor.
+Cada uno ve a la gente, los cursos, el horario y los festivos de su escuela, y nada de otra. El contenido de una asignatura solo lo ven quien ha entrado con el código, sus Docentes y la dirección.
 
-## Sant Josep Obrer (datos de arranque)
+## Fases
 
-- Escuela **Sant Josep Obrer**, verificada.
-- Clase **1.º DAW A, curso 26/27**, con el horario real de `projectes/Horari` más los cambios de CPFW e IPO.
-- Sus módulos y sus Docentes. Los Docentes se crean como pendientes, con su nombre, y se enlazan cuando creen su cuenta.
-- Sergi, como administración de la plataforma.
-
-## Cuentas: dos vías (decidido el 8 de octubre de 2026)
-
-1. **Cuentas de la escuela.** El Director o el Tutor dan de alta a cada persona, de una en una o pegando la lista de la clase.
-   - **Usuario:** sale solo con el formato `usuario@escuela`: inicial del nombre, primer apellido e inicial del segundo, más el nombre corto de la escuela. Sergi Coll Pastor → `scollp@santjosepobrer`; si ya existe, `scollp2`. No es un correo: no lleva `.novaclass` para que nadie intente escribirle.
-   - **Contraseña:** se genera una temporal que se ve una sola vez, para imprimirla o pasarla, y hay que cambiarla al entrar por primera vez. Si alguien la olvida, la resetea el Tutor o el Director.
-   - **Correo personal:** cada uno puede añadirlo después para recuperar la contraseña solo.
-2. **Registro propio.** Cualquiera crea su cuenta con su correo y entra en su clase con el **código de la clase**.
-
-**Nombre corto de la escuela:** lo elige el Director al crearla (`santjosepobrer`). Es único, en minúsculas, sin espacios ni tildes, y una escuela verificada tiene preferencia.
-
-**Orden de trabajo:**
-
-- A. **Hecho.** Unirse con código (`POST /api/novaclass/unirse`). El Tutor y la dirección ven y cambian el código desde «Tu clase» (`/api/novaclass/clases/{id}/codigo`), con las rutas en `backend/pb_hooks/clases.pb.js`.
-- B. Nombre corto de la escuela y entrar con usuario.
-- C. Cuentas creadas por la escuela.
-- D. Correo de recuperación.
+1. **Hecho.** Modelo nuevo, reglas, hooks y tests; Sant Josep Obrer pasado al modelo (migraciones `1791500400_modelo_v2.js` y `1791500500_reglas_docentes.js`). La app carga el curso, colores y formas por asignatura, y se entra en cada asignatura con su código.
+2. Cuentas creadas por la escuela (una o una lista), entrar con `usuario@escuela`, cambio de contraseña obligatorio, reseteo por el Tutor. Se quita el registro libre.
+3. El Docente crea el espacio de su asignatura (etiqueta con color y forma) y comparte el código.
+4. La dirección monta el horario desde la app.
+5. Bajas.
 
 ## Gente de prueba
 
-Un script aparte en `backend/scripts/` las crea; no van en la migración, para que no acaben en producción. Son:
-
-- un Director
-- un Tutor y dos Docentes
-- un Delegado y un Subdelegado
-- tres Estudiantes
-- alguien de otra escuela, para comprobar que no ve nada de Sant Josep Obrer
-
-Todas usan `@prueba.novaclass` y tienen contraseña conocida. Se pueden borrar todas de golpe.
-
-## Orden de trabajo
-
-1. **Hecho.** Modelo con escuelas, `memberships` y cargos, reglas según la tabla y hooks. Probado en `backend/tests/rules.test.js`. Se reescribió la primera migración en lugar de añadir una segunda, porque no se había aplicado en ningún sitio.
-2. **Hecho.** Datos de arranque (`1791500100_sant_josep_obrer.js`): los 8 módulos y Sant Josep Obrer (verificada) con 1.º DAW A, sus 10 Docentes pendientes y las 31 franjas del horario. Solo lo real: las entregas, los exámenes, los temas y las dudas de `seed.js` son de ejemplo y van con el script de gente de prueba. El Tutor y la dirección se nombran desde el panel. `backend/tests/seed.test.js` comprueba que la base de datos y el frontend dicen lo mismo.
-3. **Hecho.** Script de gente de prueba, `backend/scripts/gente-prueba.mjs` (ver `docs/backend.md`).
-4. **Frontend.** Cargos en la app, selector de clase y, más adelante, las pantallas de gestión: crear escuela, crear clase, miembros y cargos.
+`backend/scripts/gente-prueba.mjs` (ver [`backend.md`](backend.md)): una persona por cargo en Sant Josep Obrer y alguien de otra escuela, con contraseña conocida. Se borran todas de golpe.

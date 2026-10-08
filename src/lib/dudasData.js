@@ -6,8 +6,8 @@ import { dudaStatus } from '../state/dudas.js'
  * ejemplo). `mine` dice si es de quien ha entrado (por su cuenta, no por su nombre: puede haber dos iguales).
  * Las borradas (deleted) no salen. Más nuevas primero; las respuestas, en el orden en que llegaron.
  */
-export function toDudas({ dudas, answers, votes, uid, members = [], now }) {
-  const teachers = new Set(members.filter(m => m.role === 'docente' && m.user).map(m => m.user))
+export function toDudas({ dudas, answers, votes, uid, teachers: teacherIds = [], now }) {
+  const teachers = new Set(teacherIds)
   const name = rec => rec.expand?.author?.name || 'Alguien'
   const key = (duda, answer) => duda + ':' + (answer || '')
   const sum = {}
@@ -38,7 +38,7 @@ export function toDudas({ dudas, answers, votes, uid, members = [], now }) {
       }))
       const full = {
         id: d.id,
-        subject: d.expand?.module?.key || null,
+        subject: d.asignatura || null,
         title: d.title,
         body: d.body || '',
         code: d.code || '',

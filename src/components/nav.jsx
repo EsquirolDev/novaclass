@@ -128,41 +128,51 @@ function UserMenu({ size }) {
             <b>{name}</b>
             <span>{user.email}</span>
           </p>
-          {clase.classes?.length ? (
+          {clase.curso && clase.cursos.length === 1 ? (
             <div className="nc-usermenu-classes">
-              <p className="na-t-eyebrow na-muted">{clase.classes.length > 1 ? 'Tus clases' : 'Tu clase'}</p>
-              {clase.classes.map(g => {
-                const on = clase.group?.id === g.id
+              <p className="na-t-eyebrow na-muted">Tu clase</p>
+              <a className="nc-classopt is-link" href={href('/clase')} onClick={() => setOpen(false)}>
+                <b>{clase.curso.name}</b>
+                <span>
+                  {clase.school?.name}
+                  {clase.school?.verified ? <Icon name="shield" size={14} label="Escuela verificada" /> : null}
+                </span>
+                <Icon name="chevron-right" size={18} className="go" />
+              </a>
+            </div>
+          ) : null}
+          {clase.cursos?.length > 1 ? (
+            <div className="nc-usermenu-classes">
+              <p className="na-t-eyebrow na-muted">Tus cursos</p>
+              {clase.cursos.map(c => {
+                const on = clase.curso?.id === c.id
                 return (
                   <button
-                    key={g.id}
+                    key={c.id}
                     type="button"
                     className={cx('nc-classopt', on && 'is-on')}
                     aria-pressed={on}
-                    disabled={clase.classes.length === 1}
                     onClick={() => {
-                      clase.select(g.id)
+                      clase.select(c.id)
                       setOpen(false)
                     }}
                   >
-                    <b>{g.name}</b>
+                    <b>{c.name}</b>
                     <span>
-                      {g.expand?.school?.name}
-                      {g.expand?.school?.verified ? <Icon name="shield" size={14} label="Escuela verificada" /> : null}
+                      {c.expand?.school?.name}
+                      {c.expand?.school?.verified ? <Icon name="shield" size={14} label="Escuela verificada" /> : null}
                     </span>
                   </button>
                 )
               })}
+              {clase.curso ? (
+                <a className="nc-usermenu-link" href={href('/clase')} onClick={() => setOpen(false)}>
+                  <Icon name="user" size={18} />
+                  Ver {clase.curso.name}
+                </a>
+              ) : null}
             </div>
           ) : null}
-          <div className="nc-usermenu-links">
-            {clase.group ? (
-              <a href={href('/clase')} onClick={() => setOpen(false)}>
-                <Icon name="user" size={18} />
-                Tu clase
-              </a>
-            ) : null}
-          </div>
           <Button variant="secondary" icon="logout" block onClick={logout}>
             Cerrar sesión
           </Button>
