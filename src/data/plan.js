@@ -26,6 +26,7 @@ export const PLAN = [
         id: 'movil',
         title: 'Repaso en móvil (390 px)',
         detail: 'Pantalla a pantalla con capturas: Inicio, Calendario (mes, semana, horario), Asignatura, Dudas y Apuntes.',
+        done: true,
       },
       {
         id: 'a11y',
