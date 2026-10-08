@@ -97,7 +97,7 @@ export const PLAN = [
         id: 'store',
         title: 'Conectar el store a PocketBase',
         detail:
-          'En cuatro partes. Hecha la (a): la clase sale de PocketBase (horario, Docentes, temas, entregas y exámenes con lo marcado), con selector si estás en varias y pantalla si no estás en ninguna. Faltan: (b) guardar hechas y notas, (c) dudas con tiempo real, (d) apuntes.',
+          'En cuatro partes. Hecha la (a): la clase sale de PocketBase (horario, Docentes, temas, entregas y exámenes con lo marcado), con selector si estás en varias y pantalla si no estás en ninguna. Hecha la (b): «hecha» y la nota se guardan en la cuenta, al momento y en tiempo real entre dispositivos (también las entregas nuevas). Faltan: (c) dudas con tiempo real, (d) apuntes.',
       },
     ],
   },

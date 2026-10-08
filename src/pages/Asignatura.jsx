@@ -26,7 +26,7 @@ import { useStore } from '../state/store.jsx'
 import NoEncontrada from './NoEncontrada.jsx'
 
 export default function Asignatura({ id }) {
-  const { now, events, temas, dudas, apuntes, setDone } = useStore()
+  const { now, events, temas, dudas, apuntes, setDone, setGrade } = useStore()
   const [tab, setTab] = useState('entregas')
   const s = SUBJECTS[id]
   if (!s) return <NoEncontrada />
@@ -186,11 +186,7 @@ export default function Asignatura({ id }) {
                               </span>
                             </div>
                           </div>
-                          {e.grade ? (
-                            <div className="nc-grade">
-                              <b>{e.grade}</b>nota
-                            </div>
-                          ) : null}
+                          <GradeEditor title={e.title} value={e.grade} onSave={g => setGrade(e.id, g)} />
                         </div>
                       ))
                     ) : (
@@ -332,5 +328,61 @@ export default function Asignatura({ id }) {
         </div>
       </main>
     </div>
+  )
+}
+
+/*
+ * Nota de una entrega hecha: se ve grande y, al tocarla, se cambia en el sitio («8,5», «Apto»…). Solo la ve quien la
+ * pone. Vacía, la quita.
+ */
+function GradeEditor({ title, value, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(value || '')
+  function save(e) {
+    e.preventDefault()
+    onSave(text.trim().slice(0, 10))
+    setEditing(false)
+  }
+  if (editing) {
+    return (
+      <form className="nc-grade-form" onSubmit={save}>
+        <input
+          className="nc-input"
+          value={text}
+          maxLength={10}
+          autoFocus
+          aria-label={'Nota de ' + title}
+          placeholder="8,5"
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => e.key === 'Escape' && setEditing(false)}
+        />
+        <Button variant="primary" type="submit" icon="check" label="Guardar nota" />
+        <Button variant="ghost" icon="x" label="Cancelar" onClick={() => setEditing(false)} />
+      </form>
+    )
+  }
+  return value ? (
+    <button
+      type="button"
+      className="nc-grade"
+      aria-label={`Nota de ${title}: ${value}. Cambiarla`}
+      onClick={() => {
+        setText(value)
+        setEditing(true)
+      }}
+    >
+      <b>{value}</b>nota
+    </button>
+  ) : (
+    <Button
+      variant="ghost"
+      className="nc-grade-add"
+      onClick={() => {
+        setText('')
+        setEditing(true)
+      }}
+    >
+      Poner nota
+    </Button>
   )
 }

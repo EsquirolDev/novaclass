@@ -80,6 +80,7 @@ function PrivateApp({ path }) {
       <AppBar className="nc-only-mobile" />
       <OfflineBanner />
       <DemoNotice />
+      <SaveError />
       {/* Mientras carga la clase, el esqueleto; sin clase, la pantalla que lo explica; si falla, reintentar */}
       {clase.status === 'loading' ? (
         <LoadingState label="Cargando tu clase…" />
@@ -184,5 +185,24 @@ function DemoNotice() {
         ×
       </button>
     </aside>
+  )
+}
+
+/* Algo no se ha guardado en el servidor (el cambio ya se ha deshecho en pantalla) */
+function SaveError() {
+  const { saveError, clearSaveError } = useClase()
+  useEffect(() => {
+    if (!saveError) return undefined
+    const t = setTimeout(clearSaveError, 8000)
+    return () => clearTimeout(t)
+  }, [saveError, clearSaveError])
+  if (!saveError) return null
+  return (
+    <div className="nc-save-error" role="alert">
+      <span>{saveError}</span>
+      <button type="button" aria-label="Cerrar aviso" onClick={clearSaveError}>
+        ×
+      </button>
+    </div>
   )
 }

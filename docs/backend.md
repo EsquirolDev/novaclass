@@ -26,6 +26,12 @@ El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo l
 - **Formato:** `src/lib/claseData.js` pasa los registros a la misma forma que `src/data/seed.js`, con tests. Así las pantallas no cambian.
 - **Horario:** `src/lib/schedule.js` lo guarda como exportaciones vivas (`setHorario`).
 
+«Hecha» y la nota se guardan en `event_status`:
+
+- **Al momento:** el cambio se ve sin esperar al servidor; si falla, se deshace y sale un aviso.
+- **En orden:** los cambios de un mismo evento van en cola, así que no se crean registros duplicados.
+- **Tiempo real:** la app escucha `event_status` (lo marcado desde otro dispositivo) y `events` (entregas nuevas o cambiadas) mientras la clase está abierta.
+
 Las dudas y los apuntes siguen siendo de ejemplo hasta las partes (c) y (d).
 
 ## Cuentas

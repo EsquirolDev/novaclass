@@ -22,6 +22,7 @@ const EMPTY = {
   planClosed: false,
   edits: {},
   deleted: {},
+  grades: {},
 }
 
 function load() {
@@ -69,13 +70,24 @@ export function StoreProvider({ children }) {
   const real = clase.status === 'ready'
   const baseEvents = real ? clase.events : EVENTS
   const temas = real ? clase.temas : TEMAS
+  /* Con clase real, «hecha» y nota vienen de PocketBase; en el ejemplo, de lo guardado en este navegador */
   const events = useMemo(
     () =>
       baseEvents
-        .map(e => ({ ...e, done: e.id in state.done ? state.done[e.id] : !!e.done, at: parseDate(e.date, e.time) }))
+        .map(e =>
+          real
+            ? { ...e, at: parseDate(e.date, e.time) }
+            : {
+                ...e,
+                done: e.id in state.done ? state.done[e.id] : !!e.done,
+                grade: e.id in state.grades ? state.grades[e.id] || undefined : e.grade,
+                at: parseDate(e.date, e.time),
+              },
+        )
         .sort((a, b) => a.at - b.at),
-    [baseEvents, state.done],
+    [baseEvents, real, state.done, state.grades],
   )
+  const saveStatus = clase.saveStatus
 
   const dudas = useMemo(
     () =>
@@ -107,7 +119,9 @@ export function StoreProvider({ children }) {
       apuntes,
       setTheme: theme => update(() => ({ theme })),
       setWelcomed: welcomed => update(() => ({ welcomed })),
-      setDone: (id, done) => update(s => ({ done: { ...s.done, [id]: done } })),
+      setDone: (id, done) => (real ? saveStatus(id, { done }) : update(s => ({ done: { ...s.done, [id]: done } }))),
+      /* Nota de una entrega hecha («8,5», «Apto»); vacía la quita */
+      setGrade: (id, grade) => (real ? saveStatus(id, { grade }) : update(s => ({ grades: { ...s.grades, [id]: grade } }))),
       /* key: id de duda, o «idDuda:idRespuesta» */
       vote: (key, dir) => update(s => ({ votes: { ...s.votes, [key]: s.votes[key] === dir ? null : dir } })),
       addDuda: ({ subject, title, body = '', code = '', tags = [] }) => {
@@ -143,7 +157,7 @@ export function StoreProvider({ children }) {
       closePlan: () => update(() => ({ planClosed: true })),
       reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
     }),
-    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, temas, dudas, apuntes, update],
+    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, temas, dudas, apuntes, update, real, saveStatus],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

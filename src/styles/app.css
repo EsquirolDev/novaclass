@@ -590,3 +590,12 @@ main:focus{outline:none}
 .nc-classopt.is-on .na-icon{color:var(--bg)}
 .nc-classopt b{font:700 14px/1.2 var(--font-text)}
 .nc-classopt span{display:inline-flex;align-items:center;gap:5px;font:500 12px/1.2 var(--font-text);opacity:.8}
+button.nc-grade{min-height:var(--touch-min);padding:4px 8px;border:0;border-radius:var(--radius-md);background:transparent;color:inherit;cursor:pointer}
+button.nc-grade:hover{background:var(--surface-2)}
+.nc-grade-add{font-size:13px;color:var(--ink-muted)}
+.nc-grade-form{display:flex;align-items:center;gap:4px}
+.nc-grade-form .nc-input{width:88px;text-align:center}
+@media (max-width:860px){.nc-ent.is-done .nc-grade-form,.nc-ent.is-done .nc-grade-add,.nc-ent.is-done button.nc-grade{margin-left:52px}}
+.nc-save-error{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));z-index:50;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);padding:10px 10px 10px 18px;border-radius:var(--radius-lg);background:var(--ink);color:var(--bg);font:600 14px/1.35 var(--font-text);box-shadow:var(--shadow-pop)}
+.nc-save-error button{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--bg);font:400 22px/1 var(--font-text);cursor:pointer}
+@media (max-width:860px){.nc-save-error{bottom:calc(100px + env(safe-area-inset-bottom))}}
