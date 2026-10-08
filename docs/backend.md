@@ -10,12 +10,12 @@ El esquema es código. `backend/pb_migrations/` se aplica sola al arrancar, así
 backend/get-pocketbase.sh        # descarga el binario a backend/bin/ (con checksum)
 P="--dir backend/pb_data --migrationsDir backend/pb_migrations --hooksDir backend/pb_hooks"
 backend/bin/pocketbase superuser upsert tu@correo.local una-contraseña $P
-backend/bin/pocketbase serve $P
+backend/bin/pocketbase serve --http 127.0.0.1:8091 $P
 ```
 
-El panel queda en http://127.0.0.1:8090/_/. Ni `backend/bin/` ni `backend/pb_data/` van al repo.
+El panel queda en http://127.0.0.1:8091/_/. El puerto es el 8091 porque el 8090 lo tiene NovaHub para otro servicio. Ni `backend/bin/` ni `backend/pb_data/` van al repo.
 
-El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El panel de administración (`/_/`) no se reenvía nunca: solo se abre desde el propio servidor, en `http://127.0.0.1:8090/_/`. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
+El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El panel de administración (`/_/`) no se reenvía nunca: solo se abre desde el propio servidor, en `http://127.0.0.1:8091/_/`. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
 
 ## Cuentas
 
@@ -138,11 +138,16 @@ Los índices únicos garantizan dos cosas: una persona aparece una sola vez por 
 
 ## En el servidor
 
-`backend/Containerfile` construye la imagen con la misma versión y el mismo checksum que el script de descarga, y con las migraciones y los hooks dentro. Los datos van en un volumen:
+PocketBase corre como el servicio **NovaClass API** de NovaHub: un proceso con arranque automático y reinicio si se cae.
 
-```sh
-podman build -t novaclass-pb backend/
-podman run -d --name novaclass-pb -p 127.0.0.1:18090:8090 -v novaclass-pb-data:/pb/pb_data novaclass-pb
+```
+exec backend/bin/pocketbase serve --http 127.0.0.1:8091 --dir /home/sergi/apps/novaclass-pb/pb_data --migrationsDir backend/pb_migrations --hooksDir backend/pb_hooks
 ```
 
-Después hay que añadir una entrada al túnel (`~/.cloudflared/config.yml`) que apunte a `localhost:18090`, o servirlo bajo el mismo dominio que el frontend. Eso se decide en la tarea de despliegue.
+- **Carpeta de trabajo:** el repo. Los datos van en `~/apps/novaclass-pb`, fuera del repo.
+- **Comprobación de salud:** `/api/health`.
+- **Sin subdominio.** La app llega a la API por `novaclass.novaasist.dev/api` gracias al proxy de Vite, y el panel no queda publicado.
+- **Migraciones:** se aplican al arrancar, así que basta con reiniciar el servicio tras un `git pull` que traiga una nueva.
+- **Producción:** la compilación de producción (`serve.py` de NovaHub) aún no reenvía `/api`. Se resolverá en la tarea de despliegue.
+
+`backend/Containerfile` queda como alternativa en contenedor, con la misma versión y el mismo checksum.

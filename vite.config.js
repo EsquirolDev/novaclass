@@ -3,9 +3,9 @@ import { defineConfig } from 'vite'
 
 /*
  * En desarrollo, /api va a PocketBase. El panel de administración (/_/) NO se reenvía: este Vite está publicado en
- * internet por el túnel y el panel solo debe abrirse desde el propio servidor (http://127.0.0.1:8090/_/).
+ * internet por el túnel y el panel solo debe abrirse desde el propio servidor (http://127.0.0.1:8091/_/).
  */
-const PB = process.env.PB_DEV_URL || 'http://127.0.0.1:8090'
+const PB = process.env.PB_DEV_URL || 'http://127.0.0.1:8091'
 
 // https://vite.dev/config/
 export default defineConfig({

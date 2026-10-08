@@ -5,7 +5,7 @@ Vite + React, sin más dependencias. Diseño: color + forma + código por asigna
 
 ```sh
 npm install
-npm run dev     # http://localhost:5173 (/api va a PocketBase en 127.0.0.1:8090)
+npm run dev     # http://localhost:5173 (/api va a PocketBase en 127.0.0.1:8091)
 npm run build
 ```
 

@@ -9,7 +9,7 @@
  *        datos de ejemplo de la app (temas, entregas, exámenes, dudas con respuestas y votos, apuntes) en 1.º DAW A.
  * borrar: quita todo lo que creó «crear» (lo apunta en un manifiesto) y deja Sant Josep Obrer como estaba.
  *
- * PB_URL (por defecto http://127.0.0.1:8090) y PRUEBA_MANIFEST (por defecto backend/pb_data/prueba.json).
+ * PB_URL (por defecto http://127.0.0.1:8091) y PRUEBA_MANIFEST (por defecto backend/pb_data/prueba.json).
  * Nunca se ejecuta solo: no va en las migraciones para que no acabe en producción.
  */
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -18,7 +18,7 @@ import { APUNTES, DUDAS, EVENTS, TEMAS } from '../../src/data/seed.js'
 
 export const PASSWORD = 'prueba-novaclass'
 const HERE = dirname(new URL(import.meta.url).pathname)
-const PB_URL = (process.env.PB_URL || 'http://127.0.0.1:8090').replace(/\/$/, '')
+const PB_URL = (process.env.PB_URL || 'http://127.0.0.1:8091').replace(/\/$/, '')
 const MANIFEST = process.env.PRUEBA_MANIFEST || join(HERE, '../pb_data/prueba.json')
 
 /* Quién es quién. Los nombres de los Estudiantes son los autores de las dudas de ejemplo. */
