@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { APUNTES, DUDAS, EVENTS, USER } from '../data/seed.js'
 import { parseDate } from '../lib/dates.js'
+import { mergeDudas, pickEditable } from './dudas.js'
 
 /*
  * Estado de la app. Los datos de ejemplo vienen de seed.js; lo que hace la persona
- * (entregas hechas, votos, dudas, respuestas, apuntes, tema) se guarda en localStorage.
+ * (entregas hechas, votos, dudas y sus ediciones, respuestas, apuntes, tema) se guarda en localStorage.
  */
 const KEY = 'novaclass:v1'
 const EMPTY = {
@@ -18,6 +19,7 @@ const EMPTY = {
   welcomed: false,
   plan: {},
   planClosed: false,
+  edits: {},
 }
 
 function load() {
@@ -49,11 +51,6 @@ function useNow() {
   return now
 }
 
-function dudaStatus(d) {
-  if (d.accepted) return 'resuelta'
-  return d.answers.length ? 'abierta' : 'sin-responder'
-}
-
 export function StoreProvider({ children }) {
   const [state, setState] = useState(load)
   const now = useNow()
@@ -75,17 +72,15 @@ export function StoreProvider({ children }) {
 
   const dudas = useMemo(
     () =>
-      [...state.dudas, ...DUDAS].map(d => {
-        const answers = [...d.answers, ...(state.answers[d.id] || [])].map(a => ({
-          ...a,
-          votes: a.votes + voteDelta(state.votes[`${d.id}:${a.id}`]),
-          myVote: state.votes[`${d.id}:${a.id}`] || null,
-        }))
-        const accepted = state.accepted[d.id] !== undefined ? state.accepted[d.id] : d.accepted
-        const full = { ...d, answers, accepted, votes: d.votes + voteDelta(state.votes[d.id]), myVote: state.votes[d.id] || null }
-        return { ...full, status: dudaStatus(full) }
+      mergeDudas({
+        seed: DUDAS,
+        own: state.dudas,
+        answers: state.answers,
+        accepted: state.accepted,
+        votes: state.votes,
+        edits: state.edits,
       }),
-    [state.dudas, state.answers, state.accepted, state.votes],
+    [state.dudas, state.answers, state.accepted, state.votes, state.edits],
   )
 
   const apuntes = useMemo(() => [...state.apuntes, ...APUNTES], [state.apuntes])
@@ -120,6 +115,8 @@ export function StoreProvider({ children }) {
             [dudaId]: [...(s.answers[dudaId] || []), { id: 'u' + Date.now(), author: USER, when: 'ahora', votes: 0, body }],
           },
         })),
+      /* Editar una duda propia: solo título, explicación, código, etiquetas y asignatura */
+      editDuda: (id, fields) => update(s => ({ edits: { ...s.edits, [id]: { ...s.edits[id], ...pickEditable(fields), edited: true } } })),
       acceptAnswer: (dudaId, answerId) => update(s => ({ accepted: { ...s.accepted, [dudaId]: answerId } })),
       addApunte: apunte =>
         update(s => ({
@@ -134,10 +131,6 @@ export function StoreProvider({ children }) {
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
-}
-
-function voteDelta(v) {
-  return v === 'up' ? 1 : v === 'down' ? -1 : 0
 }
 
 export function useStore() {

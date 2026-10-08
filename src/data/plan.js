@@ -44,6 +44,7 @@ export const PLAN = [
         id: 'tests',
         title: 'Tests de la lógica con Vitest',
         detail: 'Horario (bloques, «qué toca ahora»), fechas y selectores del store. Son la base para cambiar el store sin miedo.',
+        done: true,
       },
     ],
   },

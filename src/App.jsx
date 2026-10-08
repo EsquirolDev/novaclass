@@ -24,6 +24,7 @@ const ROUTES = [
   ['/dudas', 'dudas', Dudas],
   ['/dudas/nueva', 'dudas', DudaNueva],
   ['/dudas/:id', 'dudas', Duda],
+  ['/dudas/:id/editar', 'dudas', DudaNueva],
   ['/apuntes', 'apuntes', Apuntes],
   ['/mejoras', null, Mejoras],
 ]

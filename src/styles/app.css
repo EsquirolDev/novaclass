@@ -462,3 +462,4 @@ main:focus{outline:none}
 @media (max-width:860px){.nc-skel{padding:16px var(--space-4)}}
 .nc-offline{position:sticky;top:var(--header-h);z-index:19;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--ink);color:var(--bg);font:600 14px/1.3 var(--font-text);text-align:center}
 @media (max-width:860px){.nc-offline{top:64px}}
+.nc-qhead .nc-edit{margin-left:auto}

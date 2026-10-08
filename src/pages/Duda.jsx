@@ -77,8 +77,14 @@ export default function Duda({ id }) {
               <SubjectTag subject={d.subject} variant="solid" showName />
               <StatusBadge status={d.status} answers={d.answers.length} />
               <span className="na-t-label na-muted">
-                Preguntada {d.when} · {d.views} visitas
+                Preguntada {d.when}
+                {d.edited ? ' · editada' : ''} · {d.views} visitas
               </span>
+              {isMine ? (
+                <Button variant="secondary" icon="edit" href={href('/dudas/' + d.id + '/editar')} className="nc-edit">
+                  Editar
+                </Button>
+              ) : null}
             </div>
             <h1 className="na-t-display">{d.title}</h1>
           </header>

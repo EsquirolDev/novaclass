@@ -5,10 +5,10 @@ export const DAY_NAMES = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Vierne
 export const DAY_SHORT = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 export const DAYS = [1, 2, 3, 4, 5]
 
-/* '15:55' → 15.9166 */
 /* '09:05' → '9:05' */
 export const trim = t => t.replace(/^0/, '')
 
+/* '15:55' → 15.9166 */
 export function toHours(time) {
   const [h, m] = time.split(':').map(Number)
   return h + m / 60
@@ -82,10 +82,13 @@ export function nowStatus(now) {
   const h = now.getHours() + now.getMinutes() / 60
   const blocks = blocksFor(day, { free: true })
   const next = blocksFor(day).find(b => toHours(b.start) > h) || null
+  /* Los minutos que quedan se cuentan en enteros: con horas decimales 18 − 17,833… da 10,0000002 y salía «quedan 11» */
+  const mins = now.getHours() * 60 + now.getMinutes()
+  const toMin = t => Math.round(toHours(t) * 60)
   if (h < DAY_START) return { state: 'antes', next }
-  if (h >= toHours(BREAK.start) && h < toHours(BREAK.end)) return { state: 'patio', next, left: Math.ceil((toHours(BREAK.end) - h) * 60) }
+  if (h >= toHours(BREAK.start) && h < toHours(BREAK.end)) return { state: 'patio', next, left: toMin(BREAK.end) - mins }
   const block = blocks.find(b => h >= toHours(b.start) && h < toHours(b.end))
   if (!block || (!block.id && !next)) return { state: 'fin' }
-  const left = Math.ceil((toHours(block.end) - h) * 60)
+  const left = toMin(block.end) - mins
   return { state: block.id ? 'clase' : 'libre', block, next, left }
 }

@@ -2,66 +2,39 @@ import { useState } from 'react'
 import { Button, Card, Icon, ListRow, Pill, StatusBadge, VoteCounter } from '../components/index.js'
 import { SUBJECTS, SUBJECT_ORDER, subjectVars } from '../data/subjects.js'
 import { href, navigate } from '../lib/router.jsx'
+import { parseTags, similarDudas, TAGS_MAX, TITLE_MAX, validateDuda } from '../lib/dudaForm.js'
 import { useStore } from '../state/store.jsx'
+import NoEncontrada from './NoEncontrada.jsx'
 
-const TITLE_MIN = 10
-const TITLE_MAX = 140
-const BODY_MIN = 20
-const TAGS_MAX = 3
-
-/* Palabras de 4+ letras, sin tildes, para buscar dudas parecidas al título */
-function words(text) {
-  return (
-    text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .match(/[a-z0-9]{4,}/g) || []
-  )
-}
-
-/* Nueva pregunta: título, explicación, código y etiquetas */
-export default function DudaNueva() {
-  const { dudas, addDuda } = useStore()
-  const [subject, setSubject] = useState(null)
-  const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
-  const [code, setCode] = useState('')
-  const [tags, setTags] = useState('')
+/* Nueva pregunta y editar una propia (`id`): título, explicación, código y etiquetas */
+export default function DudaNueva({ id }) {
+  const { user, dudas, addDuda, editDuda } = useStore()
+  const editing = id ? dudas.find(x => String(x.id) === id) : null
+  const [subject, setSubject] = useState(editing ? editing.subject : null)
+  const [title, setTitle] = useState(editing ? editing.title : '')
+  const [body, setBody] = useState(editing ? editing.body : '')
+  const [code, setCode] = useState(editing ? editing.code || '' : '')
+  const [tags, setTags] = useState(editing ? editing.tags.join(', ') : '')
   const [tried, setTried] = useState(false)
 
-  const tagList = [
-    ...new Set(
-      tags
-        .split(',')
-        .map(t => t.trim().replace(/^#/, '').toLowerCase())
-        .filter(Boolean),
-    ),
-  ]
-  const errors = {
-    subject: !subject && 'Elige la asignatura.',
-    title: title.trim().length < TITLE_MIN && `El título necesita al menos ${TITLE_MIN} caracteres.`,
-    body: body.trim().length < BODY_MIN && `Cuéntalo un poco más (mínimo ${BODY_MIN} caracteres).`,
-    tags: tagList.length > TAGS_MAX && `Máximo ${TAGS_MAX} etiquetas.`,
-  }
+  const tagList = parseTags(tags)
+  const errors = validateDuda({ subject, title, body, tags: tagList })
   const valid = !Object.values(errors).some(Boolean)
+  const similar = editing ? [] : similarDudas(dudas, title, subject)
 
-  const titleWords = words(title)
-  const similar = titleWords.length
-    ? dudas
-        .map(d => ({ d, score: words(d.title + ' ' + d.tags.join(' ')).filter(w => titleWords.includes(w)).length }))
-        .filter(x => x.score > 0 && (!subject || x.d.subject === subject))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3)
-        .map(x => x.d)
-    : []
+  /* Solo quien preguntó puede editar; una duda que no existe es un 404 */
+  if (id && (!editing || editing.author !== user)) return <NoEncontrada />
+  const back = editing ? '/dudas/' + editing.id : '/dudas'
 
   function submit(e) {
     e.preventDefault()
     setTried(true)
     if (!valid) return
-    const id = addDuda({ subject, title: title.trim(), body: body.trim(), code: code.replace(/\s+$/, ''), tags: tagList })
-    navigate('/dudas/' + id)
+    const fields = { subject, title: title.trim(), body: body.trim(), code: code.replace(/\s+$/, ''), tags: tagList }
+    if (editing) {
+      editDuda(editing.id, fields)
+      navigate(back)
+    } else navigate('/dudas/' + addDuda(fields))
   }
 
   const err = k =>
@@ -76,15 +49,19 @@ export default function DudaNueva() {
       <div className="nc-split">
         <main className="nc-main nc-main--tight">
           <nav className="nc-crumb" aria-label="Ruta">
-            <a href={href('/dudas')}>
+            <a href={href(back)}>
               <Icon name="chevron-left" size={18} />
-              Todas las dudas
+              {editing ? 'Volver a la duda' : 'Todas las dudas'}
             </a>
           </nav>
           <div className="nc-top">
             <div>
-              <h1 className="na-t-display-xl">Nueva pregunta</h1>
-              <p className="na-t-subtitle na-muted">Explica qué intentas hacer y qué te pasa. Cuanto más claro, antes te responden.</p>
+              <h1 className="na-t-display-xl">{editing ? 'Editar pregunta' : 'Nueva pregunta'}</h1>
+              <p className="na-t-subtitle na-muted">
+                {editing
+                  ? 'Aclara lo que haga falta. Las respuestas y los votos se mantienen.'
+                  : 'Explica qué intentas hacer y qué te pasa. Cuanto más claro, antes te responden.'}
+              </p>
             </div>
           </div>
 
@@ -182,11 +159,11 @@ export default function DudaNueva() {
             </label>
 
             <div className="nc-form-actions">
-              <Button variant="ghost" href={href('/dudas')}>
+              <Button variant="ghost" href={href(back)}>
                 Cancelar
               </Button>
               <Button variant="primary" type="submit" icon="check">
-                Publicar pregunta
+                {editing ? 'Guardar cambios' : 'Publicar pregunta'}
               </Button>
             </div>
           </form>
