@@ -6,6 +6,9 @@ export const DAY_SHORT = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 export const DAYS = [1, 2, 3, 4, 5]
 
 /* '15:55' → 15.9166 */
+/* '09:05' → '9:05' */
+export const trim = t => t.replace(/^0/, '')
+
 export function toHours(time) {
   const [h, m] = time.split(':').map(Number)
   return h + m / 60

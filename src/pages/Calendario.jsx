@@ -1,33 +1,15 @@
-import { useEffect, useState } from 'react'
-import { Button, EventChip, Icon, ListRow, Pill, Sigil, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
+import { useState } from 'react'
+import { Button, EventChip, Icon, Pill, Sigil, SubjectTag, Tabs } from '../components/index.js'
 import { BREAK, SESSIONS } from '../data/seed.js'
-import { OTHER_ORDER, SUBJECTS, SUBJECT_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
+import { allModulesOn, MODULE_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
-import { addDays, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, relative, sameDay, startOfWeek } from '../lib/dates.js'
-import { href } from '../lib/router.jsx'
+import { addDays, DOWS, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, sameDay, startOfWeek } from '../lib/dates.js'
 import { useIsMobile } from '../lib/useMedia.js'
-import {
-  blocksFor,
-  classInfo,
-  DAY_NAMES,
-  DAY_SHORT,
-  DAYS,
-  dayEnd,
-  nowStatus,
-  teacherNames,
-  teacherShort,
-  toHours,
-  totalHours,
-  weeklyHours,
-} from '../lib/schedule.js'
+import { blocksFor, classInfo, DAY_SHORT, DAYS, dayEnd, teacherNames, toHours, totalHours, trim, weeklyHours } from '../lib/schedule.js'
 import { chip } from '../state/selectors.js'
 import { useStore } from '../state/store.jsx'
-
-const DOWS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-
-/* Filtros: las cinco asignaturas y los módulos que solo salen en el horario */
-const FILTER_ORDER = [...SUBJECT_ORDER, ...OTHER_ORDER]
-const allOn = () => Object.fromEntries(FILTER_ORDER.map(k => [k, true]))
+import CalendarioMovil from './CalendarioMovil.jsx'
+import { AgendaRow, ClassBlock, Detail, NowLine } from './CalendarioPartes.jsx'
 
 function query() {
   return new URLSearchParams(window.location.hash.split('?')[1] || '')
@@ -38,30 +20,33 @@ function initialDate() {
   return q.get('d') ? parseDate(q.get('d')) : null
 }
 
+/* Escritorio y móvil son pantallas distintas: el móvil sigue el patrón de las apps de calendario (CalendarioMovil.jsx) */
 export default function Calendario() {
+  return useIsMobile() ? <CalendarioMovil /> : <CalendarioEscritorio />
+}
+
+function CalendarioEscritorio() {
   const { now, events } = useStore()
-  const mobile = useIsMobile()
   const fromLink = initialDate()
   const [view, setView] = useState(() => (query().get('v') === 'horario' ? 'horario' : 'mes'))
   const [ref, setRef] = useState(fromLink || now)
-  const [active, setActive] = useState(allOn)
-  /* En escritorio se abre el detalle del siguiente evento; en móvil sería una hoja tapando la pantalla nada más entrar */
+  const [active, setActive] = useState(allModulesOn)
+  /* Al entrar se abre el detalle de lo siguiente que toca */
   const [selId, setSelId] = useState(() => {
-    if (mobile) return null
     const day = fromLink || now
     const first = events.find(e => e.type !== 'festivo' && !e.done && e.at >= day) || null
     return first && first.id
   })
   const horario = view === 'horario'
   const sel = horario ? null : events.find(e => e.id === selId) || null
-  const all = FILTER_ORDER.every(k => active[k])
+  const all = MODULE_ORDER.every(k => active[k])
   const visible = events.filter(e => !e.subject || active[e.subject])
 
   function toggle(k) {
-    if (all) setActive(Object.fromEntries(FILTER_ORDER.map(s => [s, s === k])))
+    if (all) setActive(Object.fromEntries(MODULE_ORDER.map(s => [s, s === k])))
     else {
       const n = { ...active, [k]: !active[k] }
-      setActive(FILTER_ORDER.some(s => n[s]) ? n : allOn())
+      setActive(MODULE_ORDER.some(s => n[s]) ? n : allModulesOn())
     }
   }
   function move(dir) {
@@ -77,7 +62,7 @@ export default function Calendario() {
 
   return (
     <div className="nc-screen">
-      <div className={cx('nc-split', 'nc-split--cal', (!sel || mobile) && 'is-single')}>
+      <div className={cx('nc-split', 'nc-split--cal', !sel && 'is-single')}>
         <main className="nc-main nc-main--tight">
           <div className="nc-cal-bar">
             <Tabs
@@ -99,12 +84,12 @@ export default function Calendario() {
             </div>
           </div>
           <h1 className="na-t-display-xl nc-cal-title">{title}</h1>
-          <div className="nc-filters nc-filters--scroll" role="group" aria-label="Filtrar por asignatura">
-            <Pill toggle selected={all} onClick={() => setActive(allOn())}>
+          <div className="nc-filters" role="group" aria-label="Filtrar por asignatura">
+            <Pill toggle selected={all} onClick={() => setActive(allModulesOn())}>
               Todas
             </Pill>
             <span className="nc-sep" aria-hidden="true" />
-            {FILTER_ORDER.map(k => (
+            {MODULE_ORDER.map(k => (
               <Pill key={k} toggle subject={k} selected={active[k] && !all} onClick={() => toggle(k)}>
                 {subjectOf(k).code}
               </Pill>
@@ -133,32 +118,19 @@ export default function Calendario() {
             ) : null}
           </div>
           {horario ? (
-            mobile ? (
-              <HorarioDia now={now} active={active} />
-            ) : (
-              <Horario now={now} active={active} />
-            )
+            <Horario now={now} active={active} />
           ) : (
             <div className="nc-scroll-x">
               {view === 'mes' ? (
-                mobile ? (
-                  <MonthMobile key={monthTitle(ref)} refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
-                ) : (
-                  <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
-                )
+                <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
               ) : (
                 <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
               )}
             </div>
           )}
         </main>
-        {sel && !mobile ? <Detail event={sel} now={now} onClose={() => setSelId(null)} /> : null}
+        {sel ? <Detail event={sel} now={now} onClose={() => setSelId(null)} /> : null}
       </div>
-      {sel && mobile ? (
-        <Sheet onClose={() => setSelId(null)}>
-          <Detail event={sel} now={now} onClose={() => setSelId(null)} />
-        </Sheet>
-      ) : null}
     </div>
   )
 }
@@ -204,104 +176,6 @@ function MonthGrid({ refDate, now, events, sel, onSel }) {
   )
 }
 
-/* Fila de entrega o examen a tamaño de lectura (agenda de la semana y día elegido en el mes del móvil) */
-function AgendaRow({ e, now, sel, onSel }) {
-  const exam = e.type === 'examen'
-  const on = !!(sel && sel.id === e.id)
-  return (
-    <ListRow
-      subject={e.subject}
-      done={e.done}
-      onClick={() => onSel(e)}
-      aria-pressed={on}
-      className={cx('nc-arow', exam && 'exam', on && 'is-sel')}
-      leading={
-        exam ? (
-          <span className="nc-aicon exam">
-            <Icon name="flag" size={18} strokeWidth={2.4} />
-          </span>
-        ) : (
-          <span className="nc-aicon">
-            {e.done ? <Icon name="check" size={18} strokeWidth={2.6} /> : <Sigil subject={e.subject} size={14} tone="current" />}
-          </span>
-        )
-      }
-      title={e.title}
-      meta={
-        <>
-          <SubjectTag subject={e.subject} />
-          <span>{exam ? `Examen · ${e.time}–${e.end || ''}` : e.done ? 'Entrega · hecha' : `Entrega · hasta las ${e.time}`}</span>
-        </>
-      }
-      trailing={e.done ? null : <span className="nc-arel">{relative(now, e.date)}</span>}
-    />
-  )
-}
-
-/*
- * Mes en móvil: la cuadrícula solo enseña el número y los sigilos de cada día (no caben títulos en 46 px);
- * al tocar un día, sus entregas y exámenes salen debajo como filas de la agenda.
- */
-function MonthMobile({ refDate, now, events, sel, onSel }) {
-  const first = new Date(refDate.getFullYear(), refDate.getMonth(), 1)
-  const start = startOfWeek(first)
-  const last = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)
-  const weeks = Math.ceil((((first.getDay() + 6) % 7) + last.getDate()) / 7)
-  const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i))
-  const [day, setDay] = useState(() =>
-    isoDate(now.getMonth() === refDate.getMonth() && now.getFullYear() === refDate.getFullYear() ? now : first),
-  )
-  const items = events.filter(e => e.date === day && e.type !== 'festivo').sort((x, z) => (x.time || '').localeCompare(z.time || ''))
-  const holiday = events.some(e => e.date === day && e.type === 'festivo')
-  return (
-    <div className="nc-mmonth-wrap">
-      <div className="nc-mmonth" role="grid" aria-label={monthTitle(refDate)}>
-        {DOWS.map(d => (
-          <span key={d} className="dow" aria-hidden="true">
-            {d.slice(0, 1)}
-          </span>
-        ))}
-        {cells.map((d, i) => {
-          const iso = isoDate(d)
-          if (d.getMonth() !== refDate.getMonth()) return <span key={i} aria-hidden="true" />
-          const evs = events.filter(e => e.date === iso)
-          const fest = evs.some(e => e.type === 'festivo')
-          const n = evs.filter(e => e.subject).length
-          return (
-            <button
-              key={i}
-              type="button"
-              className={cx('nc-mday', i % 7 >= 5 && 'we', fest && 'fest', sameDay(d, now) && 'today')}
-              aria-pressed={iso === day}
-              aria-current={sameDay(d, now) ? 'date' : undefined}
-              aria-label={longDate(iso) + (fest ? ', festivo' : n ? `, ${n} ${n === 1 ? 'evento' : 'eventos'}` : '')}
-              onClick={() => setDay(iso)}
-            >
-              <span className="na-num">{d.getDate()}</span>
-              <span className="dots" aria-hidden="true">
-                {evs
-                  .filter(e => e.subject)
-                  .slice(0, 3)
-                  .map(e => (
-                    <Sigil key={e.id} subject={e.subject} size={8} variant={e.done ? 'outline' : 'solid'} />
-                  ))}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      <section className="nc-mday-list" aria-label={longDate(day)}>
-        <h2 className="na-t-title">{longDate(day)}</h2>
-        {items.length ? (
-          items.map(e => <AgendaRow key={e.id} e={e} now={now} sel={sel} onSel={onSel} />)
-        ) : (
-          <p className="na-muted">{holiday ? 'Festivo.' : 'Nada este día.'}</p>
-        )}
-      </section>
-    </div>
-  )
-}
-
 /*
  * Semana como agenda: un día por fila con sus entregas y exámenes a tamaño de lectura.
  * Las clases no se repiten aquí (para eso está la vista Horario); solo se indica el horario del día.
@@ -342,61 +216,6 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
         )
       })}
     </div>
-  )
-}
-
-const trim = t => t.replace(/^0/, '')
-
-/* Una clase del horario: sigilo + código, nombre, horas y profe. Los módulos sin asignatura van en neutro. */
-function ClassBlock({ block: b, style, className, current }) {
-  if (!b.id) {
-    return (
-      <div className={cx('blk', 'free', className)} style={style}>
-        <span>Libre</span>
-      </div>
-    )
-  }
-  const c = classInfo(b.id)
-  return (
-    <div
-      className={cx('blk', 'cls', current && 'is-now', className)}
-      style={{ ...style, ...subjectVars(b.id) }}
-      aria-current={current ? 'time' : undefined}
-    >
-      <span className="code">
-        <Sigil subject={b.id} size={11} tone="current" />
-        {c.code}
-      </span>
-      <span className="nm">{c.name}</span>
-      <small>
-        {trim(b.start)}–{trim(b.end)}
-        {b.teacher ? ' · ' + teacherShort(b.teacher) : ''}
-      </small>
-    </div>
-  )
-}
-
-/* «Ahora: Programación · Pau · quedan 23 min · Después: Bases de Datos a las 20:45» */
-function NowLine({ now }) {
-  const st = nowStatus(now)
-  const name = b => classInfo(b.id).name
-  const nextTxt = st.next ? `${name(st.next)} a las ${trim(st.next.start)}` : null
-  let main
-  if (st.state === 'finde') main = 'Fin de semana. El lunes empiezas a las 15:00.'
-  else if (st.state === 'fin') main = 'Por hoy ya has terminado.'
-  else if (st.state === 'antes') main = nextTxt ? `Hoy empiezas con ${nextTxt}.` : 'Hoy no tienes clase.'
-  else if (st.state === 'patio') main = `Ahora: patio · quedan ${st.left} min`
-  else if (st.state === 'libre') main = `Ahora: hora libre · quedan ${st.left} min`
-  else main = `Ahora: ${name(st.block)}${st.block.teacher ? ' · ' + teacherShort(st.block.teacher) : ''} · quedan ${st.left} min`
-  const sid = st.state === 'clase' ? st.block.id : null
-  return (
-    <p className="nc-nowline" role="status" style={subjectVars(sid)}>
-      {sid ? <Sigil subject={sid} size={12} /> : <Icon name="clock" size={18} />}
-      <span>
-        {main}
-        {['clase', 'libre', 'patio'].includes(st.state) && nextTxt ? <span className="na-muted"> · Después: {nextTxt}</span> : null}
-      </span>
-    </p>
   )
 }
 
@@ -449,7 +268,7 @@ function Horario({ now, active }) {
           </span>
         </div>
         <ul className="nc-hours-grid">
-          {FILTER_ORDER.map(id => {
+          {MODULE_ORDER.map(id => {
             const c = classInfo(id)
             const n = weeklyHours(id)
             return (
@@ -470,173 +289,6 @@ function Horario({ now, active }) {
           })}
         </ul>
       </section>
-    </div>
-  )
-}
-
-function Detail({ event: e, now, onClose }) {
-  const { dudas, setDone } = useStore()
-  const s = SUBJECTS[e.subject]
-  const exam = e.type === 'examen'
-  const related = e.related ? dudas.find(d => d.id === e.related) : null
-  return (
-    <aside className="nc-detail" style={subjectVars(e.subject)} aria-label="Detalle del evento">
-      <div className="nc-dhead">
-        <Sigil
-          subject={e.subject}
-          variant="outline"
-          tone="current"
-          size={200}
-          strokeWidth={1.6}
-          className="na-hero-deco"
-          style={{ width: 200, height: 200, right: -96, top: -84 }}
-        />
-        <div className="row">
-          <SubjectTag subject={e.subject} variant="oncolor" showName />
-          <Button variant="ghost" icon="x" label="Cerrar detalle" className="close" onClick={onClose} />
-        </div>
-        <div style={{ position: 'relative' }}>
-          <span className="na-t-eyebrow" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Icon name={exam ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />
-            {exam ? 'Examen' : 'Entrega'}
-          </span>
-          <h2 className="na-t-display" style={{ fontSize: 34, marginTop: 8 }}>
-            {e.title}
-          </h2>
-        </div>
-      </div>
-      <div className="nc-dbody">
-        <div className="left">
-          <Icon name={e.done ? 'check' : 'clock'} size={20} />
-          {e.done ? 'Hecha' : <b>{relative(now, e.date)}</b>}
-        </div>
-        <dl className="nc-facts">
-          <dt>
-            <Icon name="calendar" size={18} />
-          </dt>
-          <dd>
-            {longDate(e.date)} · {exam ? `${e.time} – ${e.end || ''}` : `hasta las ${e.time}`}
-          </dd>
-          <dt>
-            <Icon name="pin" size={18} />
-          </dt>
-          <dd>{exam ? `En clase de ${s.code}` : e.where || 'Moodle'}</dd>
-          {e.tema ? (
-            <>
-              <dt>
-                <Icon name="book" size={18} />
-              </dt>
-              <dd>{e.tema}</dd>
-            </>
-          ) : null}
-        </dl>
-        {e.topics?.length ? (
-          <div>
-            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 10 }}>
-              {exam ? 'Qué entra' : 'Qué hay que entregar'}
-            </p>
-            <ol className="nc-topics">
-              {e.topics.map((t, i) => (
-                <li key={i}>
-                  <span className="n">{i + 1}</span>
-                  {t}
-                </li>
-              ))}
-            </ol>
-          </div>
-        ) : null}
-        {related ? (
-          <div>
-            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 4 }}>
-              Duda relacionada
-            </p>
-            <ListRow
-              to={'/dudas/' + related.id}
-              className="nc-bleed"
-              leading={<Icon name="help" size={22} />}
-              title={related.title}
-              meta={<StatusBadge status={related.status} answers={related.answers.length} />}
-              trailing={<Icon name="chevron-right" size={18} />}
-            />
-          </div>
-        ) : null}
-        <div className="nc-actions">
-          {exam ? (
-            <Button variant="primary" icon="notes" block href={href('/apuntes?s=' + e.subject)}>
-              Ver apuntes de {s.code}
-            </Button>
-          ) : (
-            <Button variant={e.done ? 'secondary' : 'primary'} icon="check" block onClick={() => setDone(e.id, !e.done)}>
-              {e.done ? 'Marcar como pendiente' : 'Marcar como hecha'}
-            </Button>
-          )}
-          <Button variant="secondary" icon="book" block href={href('/asignaturas/' + e.subject)}>
-            Ir a {s.name}
-          </Button>
-        </div>
-      </div>
-    </aside>
-  )
-}
-
-/* Hoja inferior para el detalle en móvil: fondo que cierra al tocarlo, Esc también, y la página no se desplaza detrás */
-function Sheet({ onClose, children }) {
-  useEffect(() => {
-    const onKey = e => e.key === 'Escape' && onClose()
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = prev
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [onClose])
-  return (
-    <div className="nc-sheet" role="dialog" aria-modal="true" aria-label="Detalle del evento">
-      <button type="button" className="nc-sheet-bg" aria-label="Cerrar detalle" onClick={onClose} />
-      <div className="nc-sheet-body">{children}</div>
-    </div>
-  )
-}
-
-/* Horario en móvil: un día cada vez (cinco columnas no caben en 390 px), con el de hoy elegido al entrar */
-function HorarioDia({ now, active }) {
-  const today = now.getDay()
-  const [day, setDay] = useState(today >= 1 && today <= 5 ? today : 1)
-  const h = now.getHours() + now.getMinutes() / 60
-  const blocks = blocksFor(day, { free: true })
-  return (
-    <div className="nc-horario-wrap">
-      <NowLine now={now} />
-      <Tabs
-        label="Día"
-        value={String(day)}
-        onChange={v => setDay(Number(v))}
-        items={DAYS.map(d => ({ id: String(d), label: d === today ? 'Hoy' : DAY_SHORT[d] }))}
-      />
-      <ol className="nc-horario nc-hday" aria-label={'Clases del ' + DAY_NAMES[day].toLowerCase()}>
-        {blocks.map(b => (
-          <li key={b.from} className={b.from === BREAK.after + 1 ? 'after-brk' : undefined}>
-            {b.from === BREAK.after + 1 ? (
-              <div className="brkrow">
-                {BREAK.label} · {BREAK.start}–{BREAK.end}
-              </div>
-            ) : null}
-            <div className="slot">
-              <span className="tm">
-                <b>{trim(b.start)}</b>
-                {trim(b.end)}
-              </span>
-              <ClassBlock
-                block={b}
-                current={day === today && h >= toHours(b.start) && h < toHours(b.end)}
-                className={cx(day === today && 'is-today', b.id && !active[b.id] && 'is-dim')}
-              />
-            </div>
-          </li>
-        ))}
-      </ol>
-      <p className="na-t-label na-muted">Sales a las {trim(dayEnd(day))}.</p>
     </div>
   )
 }

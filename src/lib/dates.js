@@ -1,5 +1,7 @@
 /* Fechas: cortas y concretas («Vie 9 oct · 23:59»), plazos relativos al lado («Faltan 2 días»). */
 export const DOW_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+/* Semana empezando en lunes, para calendarios */
+export const DOWS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 export const DOW_LONG = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 export const MONTHS = [
   'enero',

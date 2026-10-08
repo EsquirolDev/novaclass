@@ -47,6 +47,14 @@ Organizador de clase para 1.º de DAW: entregas, exámenes, apuntes compartidos 
 - Escritorio 1280–1440 px: `TopBar` + contenido en rejilla principal + columna lateral de ~360 px.
 - Móvil 390 px: barra superior compacta, `Hero` a ancho completo, `WeekStrip compact`, carril horizontal de carpetas y `BottomNav` flotante.
 
+## Calendario en móvil
+
+Sigue el patrón de las apps de calendario, no la pantalla de escritorio en pequeño:
+
+- Cabecera fija con el mes y una tira de la semana, como Apple Calendar y Fantastical. Al tocar el mes se despliega el mes entero, y la tira se desliza para cambiar de semana.
+- Debajo va una agenda continua por días, como la vista «Agenda» de Google Calendar. Empieza hoy y solo enseña los días con algo, más hoy y el día elegido. Al desplazarla, la tira sigue al día de arriba.
+- El detalle y los filtros se abren en hojas inferiores. El horario va día a día.
+
 ## Iconografía
 
 - Iconos de trazo propios (`Icon`, 24 px, trazo 2, extremos redondeados), heredando `currentColor`. Lista en `Icon.names`.

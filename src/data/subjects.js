@@ -18,6 +18,13 @@ export const OTHER_SUBJECTS = {
 
 export const OTHER_ORDER = ['digi', 'cpfw', 'ipo']
 
+/* Todos los módulos del horario: filtros del calendario */
+export const MODULE_ORDER = [...SUBJECT_ORDER, ...OTHER_ORDER]
+
+export function allModulesOn() {
+  return Object.fromEntries(MODULE_ORDER.map(k => [k, true]))
+}
+
 /* Asignatura o módulo del horario */
 export function subjectOf(id) {
   return SUBJECTS[id] || OTHER_SUBJECTS[id] || null

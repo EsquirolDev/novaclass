@@ -22,6 +22,8 @@ export default [
       ...reactHooks.configs.recommended.rules,
       /* Que ESLint vea como usadas las variables que solo aparecen en JSX */
       'react/jsx-uses-vars': 'error',
+      /* Componentes usados en JSX sin importar (no-undef no los ve) */
+      'react/jsx-no-undef': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useStore'] }],
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     },
