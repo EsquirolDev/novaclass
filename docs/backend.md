@@ -95,7 +95,7 @@ En 1.º DAW A carga los datos de ejemplo de `src/data/seed.js`:
 
 Lo que el ejemplo daba por hecho, y su nota, queda como estado de Marta.
 
-Lo creado se apunta en `backend/pb_data/prueba.json`. «borrar» lo quita todo y deja Sant Josep Obrer como estaba. `backend/tests/prueba.test.js` lo comprueba.
+Lo creado se apunta en `backend/pb_data/prueba.json`. En el servidor, junto a los datos: añade `PB_URL=http://127.0.0.1:8091 PRUEBA_MANIFEST=/home/sergi/apps/novaclass-pb/prueba.json` a los dos comandos. La gente de prueba ya está cargada allí desde el 8 de octubre de 2026. «borrar» lo quita todo y deja Sant Josep Obrer como estaba. `backend/tests/prueba.test.js` lo comprueba.
 
 ## Reglas de acceso
 
