@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, EventChip, Icon, ListRow, Pill, Sigil, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
 import { BREAK, SESSIONS } from '../data/seed.js'
 import { OTHER_ORDER, SUBJECTS, SUBJECT_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { addDays, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, relative, sameDay, startOfWeek } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
+import { useIsMobile } from '../lib/useMedia.js'
 import {
   blocksFor,
   classInfo,
+  DAY_NAMES,
   DAY_SHORT,
   DAYS,
   dayEnd,
@@ -38,11 +40,14 @@ function initialDate() {
 
 export default function Calendario() {
   const { now, events } = useStore()
+  const mobile = useIsMobile()
   const fromLink = initialDate()
   const [view, setView] = useState(() => (query().get('v') === 'horario' ? 'horario' : 'mes'))
   const [ref, setRef] = useState(fromLink || now)
   const [active, setActive] = useState(allOn)
+  /* En escritorio se abre el detalle del siguiente evento; en móvil sería una hoja tapando la pantalla nada más entrar */
   const [selId, setSelId] = useState(() => {
+    if (mobile) return null
     const day = fromLink || now
     const first = events.find(e => e.type !== 'festivo' && !e.done && e.at >= day) || null
     return first && first.id
@@ -72,7 +77,7 @@ export default function Calendario() {
 
   return (
     <div className="nc-screen">
-      <div className={cx('nc-split', 'nc-split--cal', !sel && 'is-single')}>
+      <div className={cx('nc-split', 'nc-split--cal', (!sel || mobile) && 'is-single')}>
         <main className="nc-main nc-main--tight">
           <div className="nc-cal-bar">
             <Tabs
@@ -94,7 +99,7 @@ export default function Calendario() {
             </div>
           </div>
           <h1 className="na-t-display-xl nc-cal-title">{title}</h1>
-          <div className="nc-filters" role="group" aria-label="Filtrar por asignatura">
+          <div className="nc-filters nc-filters--scroll" role="group" aria-label="Filtrar por asignatura">
             <Pill toggle selected={all} onClick={() => setActive(allOn())}>
               Todas
             </Pill>
@@ -128,19 +133,32 @@ export default function Calendario() {
             ) : null}
           </div>
           {horario ? (
-            <Horario now={now} active={active} />
+            mobile ? (
+              <HorarioDia now={now} active={active} />
+            ) : (
+              <Horario now={now} active={active} />
+            )
           ) : (
             <div className="nc-scroll-x">
               {view === 'mes' ? (
-                <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+                mobile ? (
+                  <MonthMobile key={monthTitle(ref)} refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+                ) : (
+                  <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+                )
               ) : (
                 <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
               )}
             </div>
           )}
         </main>
-        {sel ? <Detail event={sel} now={now} onClose={() => setSelId(null)} /> : null}
+        {sel && !mobile ? <Detail event={sel} now={now} onClose={() => setSelId(null)} /> : null}
       </div>
+      {sel && mobile ? (
+        <Sheet onClose={() => setSelId(null)}>
+          <Detail event={sel} now={now} onClose={() => setSelId(null)} />
+        </Sheet>
+      ) : null}
     </div>
   )
 }
@@ -186,6 +204,104 @@ function MonthGrid({ refDate, now, events, sel, onSel }) {
   )
 }
 
+/* Fila de entrega o examen a tamaño de lectura (agenda de la semana y día elegido en el mes del móvil) */
+function AgendaRow({ e, now, sel, onSel }) {
+  const exam = e.type === 'examen'
+  const on = !!(sel && sel.id === e.id)
+  return (
+    <ListRow
+      subject={e.subject}
+      done={e.done}
+      onClick={() => onSel(e)}
+      aria-pressed={on}
+      className={cx('nc-arow', exam && 'exam', on && 'is-sel')}
+      leading={
+        exam ? (
+          <span className="nc-aicon exam">
+            <Icon name="flag" size={18} strokeWidth={2.4} />
+          </span>
+        ) : (
+          <span className="nc-aicon">
+            {e.done ? <Icon name="check" size={18} strokeWidth={2.6} /> : <Sigil subject={e.subject} size={14} tone="current" />}
+          </span>
+        )
+      }
+      title={e.title}
+      meta={
+        <>
+          <SubjectTag subject={e.subject} />
+          <span>{exam ? `Examen · ${e.time}–${e.end || ''}` : e.done ? 'Entrega · hecha' : `Entrega · hasta las ${e.time}`}</span>
+        </>
+      }
+      trailing={e.done ? null : <span className="nc-arel">{relative(now, e.date)}</span>}
+    />
+  )
+}
+
+/*
+ * Mes en móvil: la cuadrícula solo enseña el número y los sigilos de cada día (no caben títulos en 46 px);
+ * al tocar un día, sus entregas y exámenes salen debajo como filas de la agenda.
+ */
+function MonthMobile({ refDate, now, events, sel, onSel }) {
+  const first = new Date(refDate.getFullYear(), refDate.getMonth(), 1)
+  const start = startOfWeek(first)
+  const last = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0)
+  const weeks = Math.ceil((((first.getDay() + 6) % 7) + last.getDate()) / 7)
+  const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i))
+  const [day, setDay] = useState(() =>
+    isoDate(now.getMonth() === refDate.getMonth() && now.getFullYear() === refDate.getFullYear() ? now : first),
+  )
+  const items = events.filter(e => e.date === day && e.type !== 'festivo').sort((x, z) => (x.time || '').localeCompare(z.time || ''))
+  const holiday = events.some(e => e.date === day && e.type === 'festivo')
+  return (
+    <div className="nc-mmonth-wrap">
+      <div className="nc-mmonth" role="grid" aria-label={monthTitle(refDate)}>
+        {DOWS.map(d => (
+          <span key={d} className="dow" aria-hidden="true">
+            {d.slice(0, 1)}
+          </span>
+        ))}
+        {cells.map((d, i) => {
+          const iso = isoDate(d)
+          if (d.getMonth() !== refDate.getMonth()) return <span key={i} aria-hidden="true" />
+          const evs = events.filter(e => e.date === iso)
+          const fest = evs.some(e => e.type === 'festivo')
+          const n = evs.filter(e => e.subject).length
+          return (
+            <button
+              key={i}
+              type="button"
+              className={cx('nc-mday', i % 7 >= 5 && 'we', fest && 'fest', sameDay(d, now) && 'today')}
+              aria-pressed={iso === day}
+              aria-current={sameDay(d, now) ? 'date' : undefined}
+              aria-label={longDate(iso) + (fest ? ', festivo' : n ? `, ${n} ${n === 1 ? 'evento' : 'eventos'}` : '')}
+              onClick={() => setDay(iso)}
+            >
+              <span className="na-num">{d.getDate()}</span>
+              <span className="dots" aria-hidden="true">
+                {evs
+                  .filter(e => e.subject)
+                  .slice(0, 3)
+                  .map(e => (
+                    <Sigil key={e.id} subject={e.subject} size={8} variant={e.done ? 'outline' : 'solid'} />
+                  ))}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <section className="nc-mday-list" aria-label={longDate(day)}>
+        <h2 className="na-t-title">{longDate(day)}</h2>
+        {items.length ? (
+          items.map(e => <AgendaRow key={e.id} e={e} now={now} sel={sel} onSel={onSel} />)
+        ) : (
+          <p className="na-muted">{holiday ? 'Festivo.' : 'Nada este día.'}</p>
+        )}
+      </section>
+    </div>
+  )
+}
+
 /*
  * Semana como agenda: un día por fila con sus entregas y exámenes a tamaño de lectura.
  * Las clases no se repiten aquí (para eso está la vista Horario); solo se indica el horario del día.
@@ -217,45 +333,7 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
             <div className="evs">
               <span className="hrs">{hours}</span>
               {items.length ? (
-                items.map(e => {
-                  const exam = e.type === 'examen'
-                  const on = !!(sel && sel.id === e.id)
-                  return (
-                    <ListRow
-                      key={e.id}
-                      subject={e.subject}
-                      done={e.done}
-                      onClick={() => onSel(e)}
-                      aria-pressed={on}
-                      className={cx('nc-arow', exam && 'exam', on && 'is-sel')}
-                      leading={
-                        exam ? (
-                          <span className="nc-aicon exam">
-                            <Icon name="flag" size={18} strokeWidth={2.4} />
-                          </span>
-                        ) : (
-                          <span className="nc-aicon">
-                            {e.done ? (
-                              <Icon name="check" size={18} strokeWidth={2.6} />
-                            ) : (
-                              <Sigil subject={e.subject} size={14} tone="current" />
-                            )}
-                          </span>
-                        )
-                      }
-                      title={e.title}
-                      meta={
-                        <>
-                          <SubjectTag subject={e.subject} />
-                          <span>
-                            {exam ? `Examen · ${e.time}–${e.end || ''}` : e.done ? 'Entrega · hecha' : `Entrega · hasta las ${e.time}`}
-                          </span>
-                        </>
-                      }
-                      trailing={e.done ? null : <span className="nc-arel">{relative(now, e.date)}</span>}
-                    />
-                  )
-                })
+                items.map(e => <AgendaRow key={e.id} e={e} now={now} sel={sel} onSel={onSel} />)
               ) : (
                 <span className="empty">{i >= 5 || holiday ? 'Libre' : 'Nada que entregar'}</span>
               )}
@@ -498,5 +576,67 @@ function Detail({ event: e, now, onClose }) {
         </div>
       </div>
     </aside>
+  )
+}
+
+/* Hoja inferior para el detalle en móvil: fondo que cierra al tocarlo, Esc también, y la página no se desplaza detrás */
+function Sheet({ onClose, children }) {
+  useEffect(() => {
+    const onKey = e => e.key === 'Escape' && onClose()
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose])
+  return (
+    <div className="nc-sheet" role="dialog" aria-modal="true" aria-label="Detalle del evento">
+      <button type="button" className="nc-sheet-bg" aria-label="Cerrar detalle" onClick={onClose} />
+      <div className="nc-sheet-body">{children}</div>
+    </div>
+  )
+}
+
+/* Horario en móvil: un día cada vez (cinco columnas no caben en 390 px), con el de hoy elegido al entrar */
+function HorarioDia({ now, active }) {
+  const today = now.getDay()
+  const [day, setDay] = useState(today >= 1 && today <= 5 ? today : 1)
+  const h = now.getHours() + now.getMinutes() / 60
+  const blocks = blocksFor(day, { free: true })
+  return (
+    <div className="nc-horario-wrap">
+      <NowLine now={now} />
+      <Tabs
+        label="Día"
+        value={String(day)}
+        onChange={v => setDay(Number(v))}
+        items={DAYS.map(d => ({ id: String(d), label: d === today ? 'Hoy' : DAY_SHORT[d] }))}
+      />
+      <ol className="nc-horario nc-hday" aria-label={'Clases del ' + DAY_NAMES[day].toLowerCase()}>
+        {blocks.map(b => (
+          <li key={b.from} className={b.from === BREAK.after + 1 ? 'after-brk' : undefined}>
+            {b.from === BREAK.after + 1 ? (
+              <div className="brkrow">
+                {BREAK.label} · {BREAK.start}–{BREAK.end}
+              </div>
+            ) : null}
+            <div className="slot">
+              <span className="tm">
+                <b>{trim(b.start)}</b>
+                {trim(b.end)}
+              </span>
+              <ClassBlock
+                block={b}
+                current={day === today && h >= toHours(b.start) && h < toHours(b.end)}
+                className={cx(day === today && 'is-today', b.id && !active[b.id] && 'is-dim')}
+              />
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p className="na-t-label na-muted">Sales a las {trim(dayEnd(day))}.</p>
+    </div>
   )
 }
