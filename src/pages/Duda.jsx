@@ -3,6 +3,7 @@ import {
   Avatar,
   Button,
   Card,
+  ConfirmDialog,
   EmptyState,
   FileBadge,
   Icon,
@@ -16,7 +17,7 @@ import { CodeBlock, Paragraphs } from '../components/RichText.jsx'
 import { subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { shortDate } from '../lib/dates.js'
-import { href } from '../lib/router.jsx'
+import { href, navigate } from '../lib/router.jsx'
 import { useStore } from '../state/store.jsx'
 import NoEncontrada from './NoEncontrada.jsx'
 
@@ -38,8 +39,9 @@ function Post({ voteKey, votes, myVote, author, teacher, when, children }) {
 }
 
 export default function Duda({ id }) {
-  const { user, now, dudas, events, apuntes, addAnswer, acceptAnswer } = useStore()
+  const { user, now, dudas, events, apuntes, addAnswer, acceptAnswer, deleteDuda } = useStore()
   const [order, setOrder] = useState('votos')
+  const [confirming, setConfirming] = useState(false)
   const [text, setText] = useState('')
   const d = dudas.find(x => String(x.id) === id)
   if (!d) return <NoEncontrada />
@@ -81,9 +83,12 @@ export default function Duda({ id }) {
                 {d.edited ? ' · editada' : ''} · {d.views} visitas
               </span>
               {isMine ? (
-                <Button variant="secondary" icon="edit" href={href('/dudas/' + d.id + '/editar')} className="nc-edit">
-                  Editar
-                </Button>
+                <span className="nc-own-actions">
+                  <Button variant="secondary" icon="edit" href={href('/dudas/' + d.id + '/editar')}>
+                    Editar
+                  </Button>
+                  <Button variant="secondary" icon="trash" label="Eliminar pregunta" onClick={() => setConfirming(true)} />
+                </span>
               ) : null}
             </div>
             <h1 className="na-t-display">{d.title}</h1>
@@ -170,6 +175,20 @@ export default function Duda({ id }) {
               </Button>
             </div>
           </form>
+          <ConfirmDialog
+            open={confirming}
+            title="¿Eliminar esta pregunta?"
+            confirmLabel="Eliminar pregunta"
+            onCancel={() => setConfirming(false)}
+            onConfirm={() => {
+              deleteDuda(d.id)
+              navigate('/dudas?eliminada=' + d.id)
+            }}
+          >
+            {d.answers.length
+              ? `Se borrarán también sus ${d.answers.length === 1 ? 'respuesta' : d.answers.length + ' respuestas'}, y nadie más podrá verla.`
+              : 'Nadie más podrá verla.'}
+          </ConfirmDialog>
         </main>
 
         <aside className="nc-side nc-side--offset">

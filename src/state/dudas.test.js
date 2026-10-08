@@ -56,6 +56,12 @@ describe('dudas', () => {
     expect(d.answers).toHaveLength(1)
   })
 
+  it('las borradas no salen y se recuperan quitándolas de deleted', () => {
+    const seed = [duda(1), duda(2)]
+    expect(mergeDudas({ seed, deleted: { 1: true } }).map(d => d.id)).toEqual([2])
+    expect(mergeDudas({ seed, deleted: {} }).map(d => d.id)).toEqual([1, 2])
+  })
+
   it('pickEditable no deja tocar votos, autor ni respuestas', () => {
     expect(pickEditable({ title: 't', body: 'b', votes: 100, author: 'Yo', answers: [], tags: [] })).toEqual({
       title: 't',

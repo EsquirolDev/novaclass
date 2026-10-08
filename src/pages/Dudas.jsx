@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Avatar, Button, Card, EmptyState, Icon, Pill, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
 import { SUBJECTS, SUBJECT_ORDER } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
-import { href } from '../lib/router.jsx'
+import { href, navigate } from '../lib/router.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function Dudas() {
-  const { user, dudas } = useStore()
+  const { user, dudas, restoreDuda } = useStore()
+  /* Recién borrada (llega con ?eliminada=id): aviso con «Deshacer» hasta que se cierre o se deshaga */
+  const [removed] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] || '').get('eliminada'))
   const [subj, setSubj] = useState(null)
   const [st, setSt] = useState('todas')
 
@@ -47,6 +49,22 @@ export default function Dudas() {
               </Pill>
             ))}
           </div>
+          {removed ? (
+            <div className="nc-toast" role="status">
+              <Icon name="trash" size={18} />
+              <span>Pregunta eliminada.</span>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  restoreDuda(removed)
+                  navigate('/dudas/' + removed)
+                }}
+              >
+                Deshacer
+              </Button>
+              <Button variant="ghost" icon="x" label="Cerrar aviso" onClick={() => navigate('/dudas')} />
+            </div>
+          ) : null}
           <div className="nc-sub">
             <Tabs
               label="Estado"

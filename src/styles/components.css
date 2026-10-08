@@ -194,3 +194,4 @@ button.na-chip::before{content:"";position:absolute;inset:-5px 0}
 .na-sectitle{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;min-height:var(--touch-min)}
 .na-link{display:inline-flex;align-items:center;gap:4px;min-height:var(--touch-min);padding:0 4px;color:var(--accent);font:700 14px/1 var(--font-text);text-decoration:none;border:0;background:transparent;cursor:pointer}
 .na-link:hover{text-decoration:underline;text-underline-offset:3px}
+.na-btn--danger{background:var(--danger);color:var(--on-danger)}

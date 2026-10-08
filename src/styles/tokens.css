@@ -60,6 +60,8 @@
   --ipo: #B5D65A;
   --ipo-soft: #323a24;
   --on-ipo: #0F1210;
+  --danger: #FF8A7A;
+  --on-danger: #0F1210;
   --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
 }
 
@@ -101,5 +103,7 @@
   --ipo: #556B00;
   --ipo-soft: #ebefdc;
   --on-ipo: #FFFFFF;
+  --danger: #B3261E;
+  --on-danger: #FFFFFF;
   --shadow-pop: 0 16px 40px rgba(19,24,20,0.14);
 }

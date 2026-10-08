@@ -20,6 +20,7 @@ const EMPTY = {
   plan: {},
   planClosed: false,
   edits: {},
+  deleted: {},
 }
 
 function load() {
@@ -79,8 +80,9 @@ export function StoreProvider({ children }) {
         accepted: state.accepted,
         votes: state.votes,
         edits: state.edits,
+        deleted: state.deleted,
       }),
-    [state.dudas, state.answers, state.accepted, state.votes, state.edits],
+    [state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
   )
 
   const apuntes = useMemo(() => [...state.apuntes, ...APUNTES], [state.apuntes])
@@ -117,6 +119,13 @@ export function StoreProvider({ children }) {
         })),
       /* Editar una duda propia: solo título, explicación, código, etiquetas y asignatura */
       editDuda: (id, fields) => update(s => ({ edits: { ...s.edits, [id]: { ...s.edits[id], ...pickEditable(fields), edited: true } } })),
+      /* Borrar una duda propia. Se marca como borrada (no se pierde) para poder deshacerlo justo después */
+      deleteDuda: id => update(s => ({ deleted: { ...s.deleted, [id]: true } })),
+      restoreDuda: id =>
+        update(s => {
+          const { [id]: _, ...rest } = s.deleted
+          return { deleted: rest }
+        }),
       acceptAnswer: (dudaId, answerId) => update(s => ({ accepted: { ...s.accepted, [dudaId]: answerId } })),
       addApunte: apunte =>
         update(s => ({

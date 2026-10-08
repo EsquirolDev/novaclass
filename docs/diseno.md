@@ -22,6 +22,7 @@ Organizador de clase para 1.º de DAW: entregas, exámenes, apuntes compartidos 
 - Fondo `bg`; tarjetas `surface` con borde `line`; zonas hundidas (pista de pestañas, celdas de semana) `surface-2`.
 - Texto `ink`; metadatos `ink-muted` (≥4.5:1 sobre `bg`, `surface`, `surface-2` y todos los `*-soft`, en ambos temas).
 - Controles sin seleccionar: contorno `line-strong` (≥3:1 en todas las superficies).
+- `danger` (rojo) solo para el botón que confirma un borrado dentro del pop-up de confirmación, con icono de papelera y la palabra («Eliminar pregunta»). El botón que abre el pop-up es neutro.
 - `accent` (menta) solo para la acción principal, enlaces, voto propio y «Resuelta». Texto sobre él: `on-accent`.
 - Asignatura `<s>`: sigilo, pestaña, segmentos hechos y examen en `<s>`; texto sobre relleno sólido en `on-<s>`; chips de entrega y etiquetas en `<s>-soft` con texto `ink` o `<s>`.
 - El tema principal es **Oscuro**; **Claro** es su equivalente, con los colores de asignatura oscurecidos para mantener 4.5:1 con texto blanco encima.
