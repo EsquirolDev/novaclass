@@ -5,5 +5,5 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   /* Tests de lógica pura (horario, fechas, selectores, dudas): no necesitan navegador */
-  test: { environment: 'node', include: ['src/**/*.test.js'] },
+  test: { environment: 'node', include: ['src/**/*.test.js', 'backend/tests/**/*.test.js'] },
 })

@@ -65,11 +65,13 @@ export const PLAN = [
         title: 'Modelo de datos',
         detail:
           'Colecciones de PocketBase: usuarios, grupos, módulos, profes, horario, eventos (entrega, examen, festivo), dudas, respuestas, votos y apuntes.',
+        done: true,
       },
       {
         id: 'api',
         title: 'Reglas de acceso y validación',
         detail: 'Reglas de API de cada colección (quién lee, crea, edita y borra) y validación de campos; hooks en JS solo si hace falta.',
+        done: true,
       },
       {
         id: 'seed',

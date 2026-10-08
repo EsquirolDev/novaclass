@@ -1,0 +1,17 @@
+# PocketBase de NovaClass para Podman. Los datos (SQLite y archivos subidos) van en un volumen en /pb/pb_data.
+#   podman build -t novaclass-pb backend/
+#   podman run -d --name novaclass-pb -p 127.0.0.1:18090:8090 -v novaclass-pb-data:/pb/pb_data novaclass-pb
+FROM docker.io/library/alpine:3.20
+ARG PB_VERSION=0.40.4
+ARG PB_SHA256=9042ec818570e79c3628dadcd0a756c1496d9e1173918ec409d133c02f82e5fa
+RUN apk add --no-cache ca-certificates unzip wget \
+ && wget -q -O /tmp/pb.zip "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" \
+ && echo "${PB_SHA256}  /tmp/pb.zip" | sha256sum -c - \
+ && unzip -q /tmp/pb.zip pocketbase -d /pb \
+ && rm /tmp/pb.zip \
+ && apk del unzip wget
+# Las migraciones se aplican solas al arrancar: el esquema de la base de datos sale del repo
+COPY pb_migrations /pb/pb_migrations
+EXPOSE 8090
+VOLUME /pb/pb_data
+CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8090", "--dir=/pb/pb_data", "--migrationsDir=/pb/pb_migrations"]

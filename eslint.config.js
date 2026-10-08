@@ -28,5 +28,14 @@ export default [
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     },
   },
+  /* Migraciones de PocketBase: corren dentro de PocketBase (JSVM), con sus globales */
+  {
+    files: ['backend/pb_migrations/**/*.js'],
+    languageOptions: {
+      globals: { migrate: 'readonly', Collection: 'readonly', SelectField: 'readonly', RelationField: 'readonly', $app: 'readonly' },
+    },
+  },
+  /* Tests del backend: Node */
+  { files: ['backend/tests/**/*.js'], languageOptions: { globals: globals.node } },
   prettier,
 ]

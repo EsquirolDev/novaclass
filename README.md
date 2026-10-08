@@ -9,9 +9,13 @@ npm run dev     # http://localhost:5173
 npm run build
 ```
 
+## Backend
+
+PocketBase en `backend/`: el esquema y las reglas de acceso van como migraciones en el repo. Cómo arrancarlo en local, el modelo de datos y las reglas están en [`docs/backend.md`](docs/backend.md).
+
 ## Tests
 
-Vitest para la lógica pura: horario (`schedule`), fechas, selectores del store, dudas (mezcla con lo que hace la persona y ediciones), reglas del formulario de pregunta y plan de mejoras. Los archivos `*.test.js` van al lado del código que prueban.
+Vitest para la lógica pura y para las reglas de acceso del backend (contra un PocketBase de verdad, si está descargado): horario (`schedule`), fechas, selectores del store, dudas (mezcla con lo que hace la persona y ediciones), reglas del formulario de pregunta y plan de mejoras. Los archivos `*.test.js` van al lado del código que prueban.
 
 ```sh
 npx vitest run     # una vez
