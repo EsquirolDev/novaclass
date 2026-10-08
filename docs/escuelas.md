@@ -87,7 +87,7 @@ Todas usan `@prueba.novaclass` y tienen contraseña conocida. Se pueden borrar t
 
 ## Orden de trabajo
 
-1. **Migración 2.** Escuelas, `memberships` y `schedule` → `membership`; fuera `users.role`, `users.group` y `teachers`. Reglas nuevas según la tabla de arriba, y tests de reglas ampliados con cada fila de esa tabla.
+1. **Hecho.** Modelo con escuelas, `memberships` y cargos, reglas según la tabla y hooks. Probado en `backend/tests/rules.test.js`. Se reescribió la primera migración en lugar de añadir una segunda, porque no se había aplicado en ningún sitio.
 2. **Datos de arranque.** Sant Josep Obrer con su clase, horario, módulos, Docentes, temas y eventos.
 3. **Script de gente de prueba.**
 4. **Frontend.** Cargos en la app, selector de clase y, más adelante, las pantallas de gestión: crear escuela, crear clase, miembros y cargos.

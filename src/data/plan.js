@@ -78,6 +78,7 @@ export const PLAN = [
         title: 'Escuelas, clases y cargos en el modelo',
         detail:
           'Escuelas (verificadas o no) con Director, varias clases por persona, Docentes con un Tutor y Estudiantes con Delegado y Subdelegado. Plan en docs/escuelas.md.',
+        done: true,
       },
       {
         id: 'seed',
