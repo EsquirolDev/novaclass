@@ -210,6 +210,22 @@ export function ClaseProvider({ children }) {
         }
       },
       retry: () => setReload(n => n + 1),
+      /* Unirse con el código de una clase: entra como Estudiante y pasa a verla */
+      join: async code => {
+        const res = await pb.send('/api/novaclass/unirse', { method: 'POST', body: { code } })
+        setDemo(false)
+        setCurrent(res.group)
+        try {
+          localStorage.setItem(KEY, res.group)
+        } catch {
+          /* sin almacenamiento */
+        }
+        setReload(n => n + 1)
+        return res
+      },
+      /* Código de la clase (Tutor y dirección) y cambiarlo por uno nuevo */
+      getCode: id => pb.send(`/api/novaclass/clases/${id}/codigo`, { method: 'GET' }).then(r => r.code),
+      newCode: id => pb.send(`/api/novaclass/clases/${id}/codigo`, { method: 'POST' }).then(r => r.code),
       /* «Ver una clase de ejemplo» desde la pantalla de sin clase; false para volver */
       showDemo: on => setDemo(on),
     }),

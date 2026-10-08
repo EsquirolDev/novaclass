@@ -5,4 +5,5 @@ export { Card, Hero, ProgressSegments, ListRow, EventChip, Countdown, Avatar, St
 export { TopBar, AppBar, BottomNav, APP_NAME } from './nav.jsx'
 export { WeekStrip } from './WeekStrip.jsx'
 export { ConfirmDialog } from './ConfirmDialog.jsx'
+export { JoinForm } from './JoinForm.jsx'
 export { EmptyState, ErrorState, LoadingState, ErrorBoundary, OfflineBanner } from './states.jsx'

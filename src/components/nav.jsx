@@ -155,6 +155,14 @@ function UserMenu({ size }) {
               })}
             </div>
           ) : null}
+          <div className="nc-usermenu-links">
+            {clase.group ? (
+              <a href={href('/clase')} onClick={() => setOpen(false)}>
+                <Icon name="user" size={18} />
+                Tu clase
+              </a>
+            ) : null}
+          </div>
           <Button variant="secondary" icon="logout" block onClick={logout}>
             Cerrar sesión
           </Button>

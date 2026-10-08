@@ -122,7 +122,15 @@ export const PLAN = [
       {
         id: 'grupo',
         title: 'Unirse a una clase con código',
-        detail: 'Con el código de la clase o añadido por un Director o el Tutor. Selector de clase si estás en más de una.',
+        detail:
+          'Hecho: quien tiene cuenta escribe el código de su clase y entra como Estudiante (desde la pantalla de sin clase o desde «Tu clase»). Tutor y dirección ven, copian y cambian el código en «Tu clase». Selector de clase si estás en más de una.',
+        done: true,
+      },
+      {
+        id: 'cuentas-escuela',
+        title: 'Cuentas creadas por la escuela',
+        detail:
+          'Nombre corto de la escuela (santjosepobrer), entrar con usuario@escuela, alta de una persona o de una lista con contraseña temporal que se cambia al entrar, reseteo por el Tutor y correo de recuperación opcional.',
       },
       {
         id: 'roles',

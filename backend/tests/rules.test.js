@@ -380,4 +380,54 @@ describe.skipIf(!HAS_PB)('reglas de acceso de PocketBase', () => {
       expect((await fetch(url + '?token=' + (await token('ajeno')))).status).toBeGreaterThanOrEqual(400)
     })
   })
+
+  describe('unirse con código', () => {
+    const call = (who, method, path, body) =>
+      fetch(pb.base + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...(who ? { Authorization: u[who].as.token } : {}) },
+        body: body ? JSON.stringify(body) : undefined,
+      }).then(async x => ({ status: x.status, data: await x.json().catch(() => null) }))
+    let nueva
+    beforeAll(async () => {
+      nueva = await make('users', { email: 'nueva@test.local', password: PASS, passwordConfirm: PASS, name: 'Nueva' })
+      u.nueva = { ...nueva, as: await pb.login('users', 'nueva@test.local') }
+    })
+
+    it('el Tutor y la dirección ven el código; un Estudiante, un Docente o la otra escuela no', async () => {
+      const code = (await admin.one('groups', r.A.id)).data.join_code
+      expect((await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code).toBe(code)
+      expect((await call('dir', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code).toBe(code)
+      for (const who of ['est', 'doc', 'del', 'otro'])
+        expect((await call(who, 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).status, who).toBe(403)
+      expect((await call(null, 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).status).toBe(401)
+    })
+
+    it('con el código se entra como Estudiante (escrito como sea); dos veces no duplica', async () => {
+      const code = (await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
+      const messy = ' ' + code.slice(0, 4).toLowerCase() + '-' + code.slice(4) + ' '
+      const first = await call('nueva', 'POST', '/api/novaclass/unirse', { code: messy })
+      expect(first.data).toMatchObject({ group: r.A.id, name: '1.º DAW A', already: false })
+      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code })).data.already).toBe(true)
+      const mine = (await admin.list('memberships', `&filter=${encodeURIComponent(`user='${nueva.id}'`)}`)).data.items
+      expect(mine.map(m => [m.group, m.role, m.cargo])).toEqual([[r.A.id, 'estudiante', '']])
+      expect(ids(await u.nueva.as.list('dudas')).length).toBeGreaterThan(0)
+    })
+
+    it('un código que no existe o mal formado no entra', async () => {
+      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code: 'ZZZZZZZZ' })).status).toBe(404)
+      expect((await call('nueva', 'POST', '/api/novaclass/unirse', { code: 'ABC' })).status).toBe(400)
+      expect((await call(null, 'POST', '/api/novaclass/unirse', { code: 'ZZZZZZZZ' })).status).toBe(401)
+    })
+
+    it('al cambiar el código, el anterior deja de servir; solo lo cambian Tutor o dirección', async () => {
+      const old = (await call('tut', 'GET', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
+      expect((await call('est', 'POST', `/api/novaclass/clases/${r.A.id}/codigo`)).status).toBe(403)
+      const fresh = (await call('tut', 'POST', `/api/novaclass/clases/${r.A.id}/codigo`)).data.code
+      expect(fresh).toMatch(/^[A-HJ-NP-Z2-9]{8}$/)
+      expect(fresh).not.toBe(old)
+      expect((await call('ajeno', 'POST', '/api/novaclass/unirse', { code: old })).status).toBe(404)
+      expect((await call('ajeno', 'POST', '/api/novaclass/unirse', { code: fresh })).status).toBe(200)
+    })
+  })
 })

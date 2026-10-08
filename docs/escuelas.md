@@ -73,6 +73,23 @@ Para entrar en una clase hay dos caminos: el **código de la clase** o que te a�
 - Sus módulos y sus Docentes. Los Docentes se crean como pendientes, con su nombre, y se enlazan cuando creen su cuenta.
 - Sergi, como administración de la plataforma.
 
+## Cuentas: dos vías (decidido el 8 de octubre de 2026)
+
+1. **Cuentas de la escuela.** El Director o el Tutor dan de alta a cada persona, de una en una o pegando la lista de la clase.
+   - **Usuario:** sale solo con el formato `usuario@escuela`: inicial del nombre, primer apellido e inicial del segundo, más el nombre corto de la escuela. Sergi Coll Pastor → `scollp@santjosepobrer`; si ya existe, `scollp2`. No es un correo: no lleva `.novaclass` para que nadie intente escribirle.
+   - **Contraseña:** se genera una temporal que se ve una sola vez, para imprimirla o pasarla, y hay que cambiarla al entrar por primera vez. Si alguien la olvida, la resetea el Tutor o el Director.
+   - **Correo personal:** cada uno puede añadirlo después para recuperar la contraseña solo.
+2. **Registro propio.** Cualquiera crea su cuenta con su correo y entra en su clase con el **código de la clase**.
+
+**Nombre corto de la escuela:** lo elige el Director al crearla (`santjosepobrer`). Es único, en minúsculas, sin espacios ni tildes, y una escuela verificada tiene preferencia.
+
+**Orden de trabajo:**
+
+- A. **Hecho.** Unirse con código (`POST /api/novaclass/unirse`). El Tutor y la dirección ven y cambian el código desde «Tu clase» (`/api/novaclass/clases/{id}/codigo`), con las rutas en `backend/pb_hooks/clases.pb.js`.
+- B. Nombre corto de la escuela y entrar con usuario.
+- C. Cuentas creadas por la escuela.
+- D. Correo de recuperación.
+
 ## Gente de prueba
 
 Un script aparte en `backend/scripts/` las crea; no van en la migración, para que no acaben en producción. Son:

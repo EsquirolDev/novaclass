@@ -22,6 +22,7 @@ const Duda = lazy(() => import('./pages/Duda.jsx'))
 const DudaNueva = lazy(() => import('./pages/DudaNueva.jsx'))
 const Dudas = lazy(() => import('./pages/Dudas.jsx'))
 const Mejoras = lazy(() => import('./pages/Mejoras.jsx'))
+const TuClase = lazy(() => import('./pages/TuClase.jsx'))
 
 const ROUTES = [
   ['/', 'inicio', Inicio],
@@ -35,6 +36,7 @@ const ROUTES = [
   ['/apuntes', 'apuntes', Apuntes],
   ['/apuntes/:id', 'apuntes', ApunteVer],
   ['/mejoras', null, Mejoras],
+  ['/clase', null, TuClase],
 ]
 
 function resolve(path) {

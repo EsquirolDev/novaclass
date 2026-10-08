@@ -612,3 +612,29 @@ button.nc-grade:hover{background:var(--surface-2)}
 .nc-nota-body p{margin:0 0 14px;white-space:pre-line}
 .nc-nota-body p:last-child{margin-bottom:0}
 @media (max-width:860px){.nc-nota-body{padding:18px}}
+
+/* Unirse con código y «Tu clase» */
+.nc-join{display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px;text-align:left}
+.nc-join label{font:700 14px/1.2 var(--font-text)}
+.nc-join .row{display:flex;gap:8px}
+.nc-join .row .nc-input{flex:1;min-width:0}
+.nc-join-code{font:800 20px/1 var(--font-display);letter-spacing:.12em;text-transform:uppercase}
+.nc-join small{font:500 13px/1.4 var(--font-text)}
+.nc-noclase .nc-join{margin:6px auto 0}
+.nc-clase-school{display:inline-flex;align-items:center;gap:6px}
+.nc-clase-school .na-icon{color:var(--accent)}
+.nc-clase-grid{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:28px;align-items:start}
+.nc-clase-people{display:flex;flex-direction:column;gap:20px}
+.nc-people{list-style:none;margin:0;padding:0}
+.nc-people li{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0}
+.nc-people li+li{border-top:1px solid var(--line)}
+.nc-people .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font:600 15px/1.3 var(--font-text)}
+.nc-people .nm small{font:500 12px/1.3 var(--font-text);color:var(--ink-muted)}
+.nc-cargo{flex:none;padding:5px 10px;border-radius:var(--radius-pill);background:var(--ink);color:var(--bg);font:700 12px/1 var(--font-text)}
+.nc-code{margin:0 0 14px;padding:16px;border-radius:var(--radius-md);background:var(--surface-2);text-align:center;font:800 34px/1 var(--font-display);letter-spacing:.14em;user-select:all}
+.nc-code-actions{display:flex;flex-wrap:wrap;gap:8px}
+.nc-usermenu-links{display:flex;flex-direction:column}
+.nc-usermenu-links a{display:flex;align-items:center;gap:10px;min-height:var(--touch-min);padding:0 10px;border-radius:var(--radius-md);color:var(--ink);font:600 14px/1 var(--font-text);text-decoration:none}
+.nc-usermenu-links a:hover{background:var(--surface-2)}
+@media (max-width:1080px){.nc-clase-grid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:480px){.nc-join .row{flex-direction:column}.nc-code{font-size:28px}}

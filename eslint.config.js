@@ -45,6 +45,8 @@ export default [
         routerAdd: 'readonly',
         $apis: 'readonly',
         NotFoundError: 'readonly',
+        ForbiddenError: 'readonly',
+        $security: 'readonly',
         Record: 'readonly',
         $app: 'readonly',
         onRecordAfterCreateSuccess: 'readonly',

@@ -1,4 +1,4 @@
-import { Button, Icon } from '../components/index.js'
+import { Button, Icon, JoinForm } from '../components/index.js'
 import { firstName } from '../lib/users.js'
 import { useAuth } from '../state/auth.jsx'
 import { useClase } from '../state/clase.jsx'
@@ -16,13 +16,11 @@ export default function SinClase() {
           </span>
           <div className="nc-state-text">
             <h1 className="t">Hola, {firstName(user)}. Aún no estás en ninguna clase</h1>
-            <p className="d">
-              Pide a tu Tutor el código de tu clase. Muy pronto podrás unirte con él desde aquí, o te añadirá directamente tu Tutor o la
-              dirección de tu escuela.
-            </p>
+            <p className="d">Escribe el código de tu clase para entrar. O pide a tu Tutor o a la dirección de tu escuela que te añadan.</p>
           </div>
+          <JoinForm autoFocus />
           <div className="nc-state-actions">
-            <Button variant="primary" icon="calendar" onClick={() => showDemo(true)}>
+            <Button variant="secondary" icon="calendar" onClick={() => showDemo(true)}>
               Ver una clase de ejemplo
             </Button>
             <Button variant="secondary" icon="logout" onClick={logout}>
