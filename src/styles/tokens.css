@@ -1,0 +1,105 @@
+/* NovaClass — variables de diseño. Notas de uso y contrastes en docs/tokens.json: si cambias un valor, cámbialo en los dos. */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("../assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-text: "Bricolage Grotesque", system-ui, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+  --touch-min: 44px;
+  --content-max: 1360px;
+  --bg: #0F1210;
+  --surface: #1A1F1C;
+  --surface-2: #232A26;
+  --line: #2C3430;
+  --line-strong: #707A74;
+  --ink: #ECEDE8;
+  --ink-muted: #A3A9A3;
+  --accent: #5FD3A6;
+  --on-accent: #0F1210;
+  --accent-soft: #253C32;
+  --focus: var(--ink);
+  --pro: #6EA0FF;
+  --pro-soft: #273440;
+  --on-pro: #0F1210;
+  --bd: #F0A35E;
+  --bd-soft: #3c3427;
+  --on-bd: #0F1210;
+  --lm: #B48CF2;
+  --lm-soft: #33303e;
+  --on-lm: #0F1210;
+  --si: #4FC79A;
+  --si-soft: #223a30;
+  --on-si: #0F1210;
+  --ed: #E8C95A;
+  --ed-soft: #3b3a26;
+  --on-ed: #0F1210;
+  --digi: #5CC8E0;
+  --digi-soft: #22363b;
+  --on-digi: #0F1210;
+  --cpfw: #F48FB8;
+  --cpfw-soft: #3d2c34;
+  --on-cpfw: #0F1210;
+  --ipo: #B5D65A;
+  --ipo-soft: #323a24;
+  --on-ipo: #0F1210;
+  --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
+}
+
+/* Tema Claro */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F3F4EF;
+  --surface: #FFFFFF;
+  --surface-2: #E9EBE4;
+  --line: #DADDD5;
+  --line-strong: #7F877F;
+  --ink: #131814;
+  --ink-muted: #535B55;
+  --accent: #10704E;
+  --on-accent: #FFFFFF;
+  --accent-soft: #E2EEEA;
+  --focus: var(--ink);
+  --pro: #2F5FD0;
+  --pro-soft: #e6ecf9;
+  --on-pro: #FFFFFF;
+  --bd: #9E4E0F;
+  --bd-soft: #f3eae2;
+  --on-bd: #FFFFFF;
+  --lm: #7445C4;
+  --lm-soft: #eee9f8;
+  --on-lm: #FFFFFF;
+  --si: #11714F;
+  --si-soft: #e2eeea;
+  --on-si: #FFFFFF;
+  --ed: #7F6400;
+  --ed-soft: #f0ece0;
+  --on-ed: #FFFFFF;
+  --digi: #0B6A80;
+  --digi-soft: #e0eef1;
+  --on-digi: #FFFFFF;
+  --cpfw: #B4235F;
+  --cpfw-soft: #f6e4eb;
+  --on-cpfw: #FFFFFF;
+  --ipo: #556B00;
+  --ipo-soft: #ebefdc;
+  --on-ipo: #FFFFFF;
+  --shadow-pop: 0 16px 40px rgba(19,24,20,0.14);
+}
