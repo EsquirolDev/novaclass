@@ -211,11 +211,18 @@ export default function CalendarioMovil() {
                 </section>
               )
             })}
+            {/* Solo se ofrecen más semanas si de verdad hay algo después; si no, se dice */}
             <div className="nc-mmore">
-              <p className="na-muted">Hasta el {longDate(to).toLowerCase()}.</p>
-              <Button variant="secondary" icon="down" onClick={() => setWeeks(w => w + WEEKS)}>
-                Ver más semanas
-              </Button>
+              {visible.some(e => e.date > to) ? (
+                <>
+                  <p className="na-muted">Hasta el {longDate(to).toLowerCase()}.</p>
+                  <Button variant="secondary" icon="down" onClick={() => setWeeks(w => w + WEEKS)}>
+                    Ver más semanas
+                  </Button>
+                </>
+              ) : (
+                <p className="na-muted">No hay nada más programado.</p>
+              )}
             </div>
           </div>
         </>
