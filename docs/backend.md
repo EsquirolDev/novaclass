@@ -62,6 +62,41 @@ Fechas y horas van como texto local («2026-10-09», «23:59»), igual que en el
 
 Los datos se copiaron de `src/data/seed.js` y `subjects.js` y quedan fijos en la migración. `backend/tests/seed.test.js` falla si el frontend y la base de datos dejan de coincidir.
 
+## Gente de prueba
+
+`backend/scripts/gente-prueba.mjs` crea cuentas de prueba y los datos de ejemplo de la app. No va en las migraciones, para que no acabe en producción. Se ejecuta a mano contra un PocketBase en marcha, con una cuenta de superuser:
+
+```sh
+PB_ADMIN_EMAIL=tu@correo PB_ADMIN_PASS=… node backend/scripts/gente-prueba.mjs crear
+PB_ADMIN_EMAIL=tu@correo PB_ADMIN_PASS=… node backend/scripts/gente-prueba.mjs borrar
+```
+
+Todas las cuentas usan la contraseña `prueba-novaclass`:
+
+| Cuenta                            | Quién                                    | Dónde                                   |
+| --------------------------------- | ---------------------------------------- | --------------------------------------- |
+| `director@prueba.novaclass`       | Joana Mascaró Vich, Director             | Sant Josep Obrer                        |
+| `tutor@prueba.novaclass`          | Catalina Vidal Ripoll, Docente y Tutor   | 1.º DAW A                               |
+| `docente1@prueba.novaclass`       | Toni Ferrer Sastre, Docente              | 1.º DAW A                               |
+| `docente2@prueba.novaclass`       | Marga Pons Alzina, Docente               | 1.º DAW A                               |
+| `delegado@prueba.novaclass`       | Aina Pons Mir, Estudiante y Delegado     | 1.º DAW A                               |
+| `subdelegado@prueba.novaclass`    | Laia Coll Font, Estudiante y Subdelegado | 1.º DAW A                               |
+| `estudiante1@prueba.novaclass`    | Marta Rosselló Bauzà, Estudiante         | 1.º DAW A                               |
+| `estudiante2@prueba.novaclass`    | Joan Riera Tous, Estudiante              | 1.º DAW A                               |
+| `estudiante3@prueba.novaclass`    | Iker Martí Roca, Estudiante              | 1.º DAW A                               |
+| `otra-direccion@prueba.novaclass` | Pere Amengual Coll, Director             | Escuela de Prueba (Inca, sin verificar) |
+| `otra@prueba.novaclass`           | Xisca Bauzà Pujol, Estudiante            | 1.º SMX A de la Escuela de Prueba       |
+
+En 1.º DAW A carga los datos de ejemplo de `src/data/seed.js`:
+
+- temas, entregas, exámenes y festivos
+- dudas con sus respuestas, la respuesta aceptada y votos de la gente de la clase
+- apuntes; los de tipo PDF llevan un PDF mínimo generado
+
+Lo que el ejemplo daba por hecho, y su nota, queda como estado de Marta.
+
+Lo creado se apunta en `backend/pb_data/prueba.json`. «borrar» lo quita todo y deja Sant Josep Obrer como estaba. `backend/tests/prueba.test.js` lo comprueba.
+
 ## Reglas de acceso
 
 Son la seguridad de verdad: el frontend solo esconde botones. Se construyen con unas pocas funciones al principio de la migración:

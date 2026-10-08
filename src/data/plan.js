@@ -91,6 +91,7 @@ export const PLAN = [
         id: 'pruebas',
         title: 'Gente de prueba',
         detail: 'Script aparte con Director, Tutor, Docentes, Delegado, Subdelegado, Estudiantes y alguien de otra escuela.',
+        done: true,
       },
       {
         id: 'store',

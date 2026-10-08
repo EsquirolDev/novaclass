@@ -9,7 +9,7 @@ import globals from 'globals'
 export default [
   { ignores: ['dist'] },
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -37,6 +37,7 @@ export default [
         Collection: 'readonly',
         SelectField: 'readonly',
         RelationField: 'readonly',
+        TextField: 'readonly',
         Record: 'readonly',
         $app: 'readonly',
         onRecordAfterCreateSuccess: 'readonly',
@@ -47,6 +48,6 @@ export default [
     },
   },
   /* Tests del backend y configuración: Node */
-  { files: ['backend/tests/**/*.js', '*.config.js'], languageOptions: { globals: globals.node } },
+  { files: ['backend/tests/**/*.js', 'backend/scripts/**/*.mjs', '*.config.js'], languageOptions: { globals: globals.node } },
   prettier,
 ]

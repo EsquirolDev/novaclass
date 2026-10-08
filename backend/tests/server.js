@@ -56,9 +56,15 @@ export async function startPocketBase() {
     if (!res.ok) throw new Error('login ' + email + ': ' + JSON.stringify(res.data))
     return client(base, res.data.token)
   }
+  const loginWith = async (email, password) => {
+    const res = await client(base).api('POST', '/api/collections/users/auth-with-password', { identity: email, password })
+    if (!res.ok) throw new Error('login ' + email + ': ' + JSON.stringify(res.data))
+    return client(base, res.data.token)
+  }
   return {
     base,
     login,
+    loginWith,
     admin: await login('_superusers', 'admin@test.local'),
     stop() {
       proc.kill()
