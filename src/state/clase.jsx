@@ -3,6 +3,7 @@ import { myRole, toEvents, toHorario, toTemas } from '../lib/claseData.js'
 import { AUTH_ON } from '../lib/flags.js'
 import { pb } from '../lib/pb.js'
 import { setHorario } from '../lib/schedule.js'
+import { loadApuntes, useApuntesPb } from './apuntesPb.js'
 import { loadQa, useDudasPb } from './dudasPb.js'
 import { useAuth } from './auth.jsx'
 
@@ -26,7 +27,7 @@ function remembered() {
 
 async function loadClase(group, userId) {
   const inGroup = pb.filter('group = {:g}', { g: group.id })
-  const [schedule, memberships, topics, events, statuses, staff, modules, qa] = await Promise.all([
+  const [schedule, memberships, topics, events, statuses, staff, modules, qa, apuntesRaw] = await Promise.all([
     pb.collection('schedule').getFullList({ filter: inGroup, expand: 'module' }),
     pb.collection('memberships').getFullList({ filter: inGroup, expand: 'user' }),
     pb.collection('topics').getFullList({ filter: inGroup, expand: 'module', sort: 'order' }),
@@ -35,6 +36,7 @@ async function loadClase(group, userId) {
     pb.collection('school_staff').getFullList({ filter: pb.filter('school = {:s} && user = {:u}', { s: group.school, u: userId }) }),
     pb.collection('modules').getFullList({ fields: 'id,key' }),
     loadQa(group.id),
+    loadApuntes(group.id),
   ])
   return {
     horario: toHorario(group, schedule, memberships),
@@ -45,8 +47,9 @@ async function loadClase(group, userId) {
     me: myRole(memberships, userId, staff.length > 0),
     members: memberships,
     moduleIds: Object.fromEntries(modules.map(m => [m.key, m.id])),
-    /* Dudas, respuestas y votos en crudo (src/state/dudasPb.js) */
+    /* Dudas, respuestas y votos en crudo (src/state/dudasPb.js) y apuntes (src/state/apuntesPb.js) */
     qa,
+    apuntesRaw,
   }
 }
 
@@ -186,11 +189,13 @@ export function ClaseProvider({ children }) {
   }, [groupId, patchEvent])
 
   const qaActions = useDudasPb({ state, setState, uid, setSaveError })
+  const apActions = useApuntesPb({ state, setState, uid })
 
   const value = useMemo(
     () => ({
       ...state,
       qaActions,
+      apActions,
       demo,
       saveStatus,
       saveError,
@@ -208,7 +213,7 @@ export function ClaseProvider({ children }) {
       /* «Ver una clase de ejemplo» desde la pantalla de sin clase; false para volver */
       showDemo: on => setDemo(on),
     }),
-    [state, demo, saveStatus, saveError, qaActions],
+    [state, demo, saveStatus, saveError, qaActions, apActions],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

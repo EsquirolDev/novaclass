@@ -14,6 +14,7 @@ import { useStore } from './state/store.jsx'
 
 /* Inicio va en el paquete principal; el resto de pantallas se cargan al entrar (mientras, se ve el esqueleto) */
 const Apuntes = lazy(() => import('./pages/Apuntes.jsx'))
+const ApunteVer = lazy(() => import('./pages/ApunteVer.jsx'))
 const Asignatura = lazy(() => import('./pages/Asignatura.jsx'))
 const Asignaturas = lazy(() => import('./pages/Asignaturas.jsx'))
 const Calendario = lazy(() => import('./pages/Calendario.jsx'))
@@ -32,6 +33,7 @@ const ROUTES = [
   ['/dudas/:id', 'dudas', Duda],
   ['/dudas/:id/editar', 'dudas', DudaNueva],
   ['/apuntes', 'apuntes', Apuntes],
+  ['/apuntes/:id', 'apuntes', ApunteVer],
   ['/mejoras', null, Mejoras],
 ]
 
@@ -153,7 +155,8 @@ function DemoNotice() {
       return false
     }
   })
-  if (hidden || clase.status === 'loading' || clase.status === 'none') return null
+  /* Con la clase real ya no hay nada de ejemplo: el aviso solo sale en el modo de ejemplo */
+  if (hidden || clase.status !== 'demo') return null
   function hide() {
     setHidden(true)
     try {
@@ -164,23 +167,19 @@ function DemoNotice() {
   }
   return (
     <aside className="nc-demo" aria-label="Aviso">
-      {clase.status === 'ready' ? (
-        <span>Todo es ya de tu clase salvo los apuntes, que todavía son de ejemplo.</span>
-      ) : (
-        <span>
-          Estás viendo una clase de ejemplo.
-          {clase.demo ? (
-            <>
-              {' '}
-              <button type="button" className="nc-demo-link" onClick={() => clase.showDemo(false)}>
-                Salir del ejemplo
-              </button>
-            </>
-          ) : (
-            ' Muy pronto podrás unirte a la tuya con su código.'
-          )}
-        </span>
-      )}
+      <span>
+        Estás viendo una clase de ejemplo.
+        {clase.demo ? (
+          <>
+            {' '}
+            <button type="button" className="nc-demo-link" onClick={() => clase.showDemo(false)}>
+              Salir del ejemplo
+            </button>
+          </>
+        ) : (
+          ' Muy pronto podrás unirte a la tuya con su código.'
+        )}
+      </span>
       <button type="button" aria-label="Cerrar aviso" onClick={hide}>
         ×
       </button>

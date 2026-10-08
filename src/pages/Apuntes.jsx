@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Avatar, Button, Card, EmptyState, FileBadge, Icon, ListRow, Pill, SubjectTag, Tabs } from '../components/index.js'
 import { SUBJECTS, SUBJECT_ORDER } from '../data/subjects.js'
+import { checkApunte, sizeLabel } from '../lib/apuntesData.js'
 import { useStore } from '../state/store.jsx'
 
 function initialSubject() {
@@ -8,12 +9,10 @@ function initialSubject() {
   return SUBJECTS[q.get('s')] ? q.get('s') : null
 }
 
-function sizeLabel(bytes) {
-  return bytes > 1e6 ? (bytes / 1e6).toFixed(1).replace('.', ',') + ' MB' : Math.round(bytes / 1e3) + ' KB'
-}
-
 export default function Apuntes() {
-  const { user, apuntes, addApunte } = useStore()
+  const { apuntes, addApunte, openApunte } = useStore()
+  const [openError, setOpenError] = useState(null)
+  const open = a => openApunte(a).catch(() => setOpenError('No se ha podido abrir. Vuelve a intentarlo.'))
   const [subj, setSubj] = useState(initialSubject)
   const [type, setType] = useState(null)
 
@@ -62,6 +61,12 @@ export default function Apuntes() {
               ))}
             </div>
           </div>
+          {openError ? (
+            <p className="nc-form-err" role="alert" style={{ marginBottom: 16 }}>
+              <Icon name="alert" size={18} />
+              {openError}
+            </p>
+          ) : null}
           <div className="nc-sections">
             {groups.length ? (
               groups.map(g => {
@@ -83,37 +88,23 @@ export default function Apuntes() {
                             </span>
                             <div style={{ minWidth: 0 }}>
                               <div className="t">
-                                {it.url ? (
-                                  <a href={it.url} target="_blank" rel="noreferrer">
-                                    {it.title}
-                                  </a>
-                                ) : (
-                                  it.title
-                                )}
+                                <button type="button" className="nc-linkbtn" onClick={() => open(it)}>
+                                  {it.title}
+                                </button>
                               </div>
                               <span className="sz">{it.size}</span>
                             </div>
                             <div className="au">
-                              <Avatar name={it.author} size={28} me={it.author === user} />
-                              <span>{it.author === user ? 'Tú' : it.author}</span>
+                              <Avatar name={it.author} size={28} me={it.mine} />
+                              <span>{it.mine ? 'Tú' : it.author}</span>
                             </div>
                             <span className="dt">{it.date}</span>
-                            {it.url ? (
-                              <Button
-                                variant="ghost"
-                                icon="arrow-right"
-                                label={'Abrir ' + it.title}
-                                href={it.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              />
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                icon={it.type === 'pdf' ? 'download' : 'chevron-right'}
-                                label={(it.type === 'pdf' ? 'Descargar ' : 'Abrir ') + it.title}
-                              />
-                            )}
+                            <Button
+                              variant="ghost"
+                              icon={it.type === 'pdf' ? 'download' : it.type === 'enlace' ? 'arrow-right' : 'chevron-right'}
+                              label={(it.type === 'pdf' ? 'Descargar ' : it.type === 'enlace' ? 'Abrir enlace: ' : 'Leer ') + it.title}
+                              onClick={() => open(it)}
+                            />
                           </div>
                         ))}
                       </div>
@@ -159,6 +150,7 @@ export default function Apuntes() {
                   }
                   title={r.title}
                   meta={[<SubjectTag key="t" subject={r.subject} />, <span key="n">{r.downloads} descargas</span>]}
+                  onClick={() => open(r)}
                 />
               ))}
             </div>
@@ -177,7 +169,10 @@ function UploadCard({ onPublish }) {
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
   const [file, setFile] = useState(null)
+  const [body, setBody] = useState('')
   const [drag, setDrag] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState(null)
   const temas = useStore().temas[upSubj] || []
 
   function pick(f) {
@@ -185,22 +180,35 @@ function UploadCard({ onPublish }) {
     setFile(f)
     if (!title) setTitle(f.name.replace(/\.[^.]+$/, ''))
   }
-  const ready = title.trim() && (upType === 'nota' || (upType === 'enlace' ? /^https?:\/\//.test(url) : file))
+  const problem = checkApunte({ type: upType, title, url, body, file })
 
-  function submit(e) {
+  /* Con clase real, espera al servidor (el PDF se sube); si falla, el formulario se queda como estaba */
+  async function submit(e) {
     e.preventDefault()
-    if (!ready) return
-    onPublish({
-      subject: upSubj,
-      tema: `Tema ${tema + 1} · ${temas[tema]?.[0] || ''}`,
-      type: upType,
-      title: title.trim(),
-      size: upType === 'pdf' ? sizeLabel(file.size) : upType === 'enlace' ? new URL(url).hostname : '1 min de lectura',
-      url: upType === 'enlace' ? url : undefined,
-    })
-    setTitle('')
-    setUrl('')
-    setFile(null)
+    if (busy) return
+    if (problem) return setMsg({ error: problem })
+    setBusy(true)
+    setMsg(null)
+    try {
+      await onPublish({
+        subject: upSubj,
+        tema: temas[tema] ? `Tema ${tema + 1} · ${temas[tema][0]}` : 'Sin tema',
+        type: upType,
+        title: title.trim(),
+        size: upType === 'pdf' ? sizeLabel(file.size) : upType === 'enlace' ? new URL(url).hostname : '1 min de lectura',
+        url: upType === 'enlace' ? url.trim() : undefined,
+        body: upType === 'nota' ? body.trim() : undefined,
+        file: upType === 'pdf' ? file : undefined,
+      })
+      setTitle('')
+      setUrl('')
+      setBody('')
+      setFile(null)
+      setMsg({ ok: `Publicado en ${SUBJECTS[upSubj].code}.` })
+    } catch {
+      setMsg({ error: 'No se ha podido publicar. Lo que has puesto sigue aquí: vuelve a intentarlo.' })
+    }
+    setBusy(false)
   }
 
   return (
@@ -250,6 +258,18 @@ function UploadCard({ onPublish }) {
             <input className="nc-input" type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://" />
           </label>
         ) : null}
+        {upType === 'nota' ? (
+          <label className="nc-field">
+            <span>Texto</span>
+            <small className="na-muted">Una línea por punto. Usa `comillas invertidas` para código y **asteriscos** para resaltar.</small>
+            <textarea
+              className="nc-textarea-lg"
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              placeholder="Lo importante del tema…"
+            />
+          </label>
+        ) : null}
         <label className="nc-field">
           <span>Título</span>
           <input
@@ -291,9 +311,21 @@ function UploadCard({ onPublish }) {
           </select>
         </label>
         <div style={{ marginTop: 20 }}>
-          <Button variant="primary" type="submit" block icon="check" disabled={!ready}>
-            Publicar en {SUBJECTS[upSubj].code}
+          <Button variant="primary" type="submit" block icon="check" disabled={busy}>
+            {busy ? 'Publicando…' : `Publicar en ${SUBJECTS[upSubj].code}`}
           </Button>
+          {msg?.error ? (
+            <p className="nc-form-err" role="alert" style={{ marginTop: 12 }}>
+              <Icon name="alert" size={18} />
+              {msg.error}
+            </p>
+          ) : null}
+          {msg?.ok ? (
+            <p className="nc-form-ok" role="status" style={{ marginTop: 12 }}>
+              <Icon name="check" size={18} strokeWidth={2.6} />
+              {msg.ok}
+            </p>
+          ) : null}
         </div>
       </form>
     </Card>

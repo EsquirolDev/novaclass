@@ -333,4 +333,51 @@ describe.skipIf(!HAS_PB)('reglas de acceso de PocketBase', () => {
       expect((await u.doc.as.del('apuntes', ok.data.id)).ok).toBe(true)
     })
   })
+
+  describe('contadores y PDF protegidos', () => {
+    const pdf = () => new Blob(['%PDF-1.4\n1 0 obj << >> endobj\ntrailer << >>\n%%EOF\n'], { type: 'application/pdf' })
+    async function subirPdf(who) {
+      const form = new FormData()
+      for (const [k, v] of Object.entries({ group: r.A.id, module: r.bd.id, author: u[who].id, type: 'pdf', title: 'Resumen JOINs' }))
+        form.append(k, v)
+      form.append('file', pdf(), 'joins.pdf')
+      const res = await fetch(pb.base + '/api/collections/apuntes/records', {
+        method: 'POST',
+        headers: { Authorization: u[who].as.token },
+        body: form,
+      })
+      return res.json()
+    }
+    const post = (who, path) =>
+      fetch(pb.base + path, { method: 'POST', headers: who ? { Authorization: u[who].as.token } : {} }).then(async x => ({
+        status: x.status,
+        data: await x.json().catch(() => null),
+      }))
+
+    it('abrir un apunte suma una descarga solo a quien puede verlo', async () => {
+      const ap = await subirPdf('est')
+      expect((await post('del', `/api/novaclass/apuntes/${ap.id}/abierto`)).data.downloads).toBe(1)
+      expect((await post('dir', `/api/novaclass/apuntes/${ap.id}/abierto`)).data.downloads).toBe(2)
+      expect((await post('ajeno', `/api/novaclass/apuntes/${ap.id}/abierto`)).status).toBe(404)
+      expect((await post(null, `/api/novaclass/apuntes/${ap.id}/abierto`)).status).toBe(401)
+      expect((await admin.one('apuntes', ap.id)).data.downloads).toBe(2)
+    })
+
+    it('abrir una duda suma una visita; una borrada solo la cuenta su autor', async () => {
+      const d = (await u.est.as.post('dudas', duda(u.est, r.A))).data
+      expect((await post('doc', `/api/novaclass/dudas/${d.id}/visita`)).data.views).toBe(1)
+      expect((await post('otro', `/api/novaclass/dudas/${d.id}/visita`)).status).toBe(404)
+      await u.est.as.patch('dudas', d.id, { deleted: true })
+      expect((await post('doc', `/api/novaclass/dudas/${d.id}/visita`)).status).toBe(404)
+    })
+
+    it('un PDF no se descarga sin token de archivo; con el de alguien de la clase, sí', async () => {
+      const ap = await subirPdf('est')
+      const url = `${pb.base}/api/files/apuntes/${ap.id}/${ap.file}`
+      expect((await fetch(url)).status).toBeGreaterThanOrEqual(400)
+      const token = async who => (await u[who].as.api('POST', '/api/files/token')).data.token
+      expect((await fetch(url + '?token=' + (await token('del')))).status).toBe(200)
+      expect((await fetch(url + '?token=' + (await token('ajeno')))).status).toBeGreaterThanOrEqual(400)
+    })
+  })
 })

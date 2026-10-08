@@ -23,6 +23,7 @@ export function client(base, token) {
     return { ok: res.ok, status: res.status, data }
   }
   return {
+    token,
     api,
     get: p => api('GET', p),
     post: (c, b) => api('POST', `/api/collections/${c}/records`, b),

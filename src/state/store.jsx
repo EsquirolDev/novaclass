@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { APUNTES, DUDAS, EVENTS, TEMAS, USER } from '../data/seed.js'
 import { parseDate } from '../lib/dates.js'
+import { toApuntes } from '../lib/apuntesData.js'
 import { toDudas } from '../lib/dudasData.js'
+import { navigate } from '../lib/router.jsx'
 import { useAuth } from './auth.jsx'
 import { useClase } from './clase.jsx'
 import { mergeDudas, pickEditable } from './dudas.js'
@@ -112,7 +114,13 @@ export function StoreProvider({ children }) {
     [real, clase.qa, clase.members, authUser?.id, state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
   )
 
-  const apuntes = useMemo(() => [...state.apuntes, ...APUNTES], [state.apuntes])
+  /* Apuntes: los de la clase en PocketBase o, sin ella, los de ejemplo más los subidos en este navegador */
+  const apuntes = useMemo(
+    () =>
+      real ? toApuntes(clase.apuntesRaw, authUser?.id, now) : [...state.apuntes, ...APUNTES].map(a => ({ ...a, mine: a.author === USER })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [real, clase.apuntesRaw, authUser?.id, state.apuntes],
+  )
 
   const value = useMemo(
     () => ({
@@ -166,7 +174,15 @@ export function StoreProvider({ children }) {
       closePlan: () => update(() => ({ planClosed: true })),
       reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
       /* Con clase real, las dudas van a PocketBase (src/state/dudasPb.js): pisan las acciones locales de arriba */
+      /* Abrir un apunte en el ejemplo: enlaces y notas sí; los PDF de ejemplo no tienen archivo */
+      openApunte: async a => {
+        if (a.type === 'nota') return navigate('/apuntes/' + a.id)
+        if (a.url) window.open(a.url, '_blank', 'noopener')
+      },
+      countApunte: () => {},
+      visit: () => {},
       ...(real ? clase.qaActions : {}),
+      ...(real ? clase.apActions : {}),
     }),
     [
       now,
@@ -182,6 +198,7 @@ export function StoreProvider({ children }) {
       real,
       saveStatus,
       clase.qaActions,
+      clase.apActions,
     ],
   )
 

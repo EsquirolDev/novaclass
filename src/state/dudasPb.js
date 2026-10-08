@@ -205,6 +205,23 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
     }
   }, [groupId, edit])
 
+  /* Visita a una duda: una vez por sesión y duda; el servidor suma y devuelve la cifra */
+  const visit = useCallback(
+    id => {
+      const key = 'novaclass:visita:' + id
+      try {
+        if (sessionStorage.getItem(key)) return
+        sessionStorage.setItem(key, '1')
+      } catch {
+        /* sin almacenamiento: se cuenta igual */
+      }
+      pb.send(`/api/novaclass/dudas/${id}/visita`, { method: 'POST' })
+        .then(({ views }) => edit('dudas', l => l.map(d => (d.id === id ? { ...d, views } : d))))
+        .catch(() => {})
+    },
+    [edit],
+  )
+
   return useMemo(
     () => ({
       addDuda,
@@ -214,7 +231,8 @@ export function useDudasPb({ state, setState, uid, setSaveError }) {
       addAnswer,
       acceptAnswer,
       vote,
+      visit,
     }),
-    [addDuda, editDuda, setDeleted, addAnswer, acceptAnswer, vote],
+    [addDuda, editDuda, setDeleted, addAnswer, acceptAnswer, vote, visit],
   )
 }

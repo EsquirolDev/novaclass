@@ -40,7 +40,23 @@ Las dudas (`src/state/dudasPb.js` y `src/lib/dudasData.js`) se cargan con la cla
 - **Tiempo real:** llegan las dudas, respuestas y votos de los demás. PocketBase no avisa cuando un cambio hace invisible una duda (al borrarla), así que se comprueba qué dudas siguen existiendo al volver a la pestaña y cada minuto.
 - **Pendiente:** las visitas no suben todavía (hace falta un hook).
 
-Los apuntes siguen siendo de ejemplo hasta la parte (d).
+Los apuntes (`src/state/apuntesPb.js` y `src/lib/apuntesData.js`) también se cargan con la clase:
+
+- **Subir:** espera al servidor; el PDF va en un FormData con su tamaño en `bytes`.
+- **PDF protegidos:** solo se descargan con un token de archivo, que PocketBase da a quien puede ver el apunte.
+- **Abrir:** cuenta una descarga en el servidor. El PDF se abre con su token en otra pestaña, el enlace tal cual y la nota en su pantalla (`#/apuntes/:id`).
+- **Tiempo real:** llegan los que suben los demás.
+
+## Contadores
+
+`pb_hooks/contadores.pb.js` tiene dos rutas, porque las reglas no dejan que la app toque estos campos:
+
+- `POST /api/novaclass/apuntes/{id}/abierto` suma una descarga.
+- `POST /api/novaclass/dudas/{id}/visita` suma una visita.
+
+Las dos suman solo si quien llama puede ver el registro (la misma regla de lectura que la API), y lo hacen en SQL para que dos a la vez no se pisen. La app las llama una vez por sesión.
+
+PocketBase vigila `pb_hooks`: al cambiar un hook se reinicia solo y aplica las migraciones nuevas.
 
 ## Cuentas
 

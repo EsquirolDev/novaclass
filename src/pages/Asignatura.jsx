@@ -26,7 +26,7 @@ import { useStore } from '../state/store.jsx'
 import NoEncontrada from './NoEncontrada.jsx'
 
 export default function Asignatura({ id }) {
-  const { now, events, temas, dudas, apuntes, setDone, setGrade } = useStore()
+  const { now, events, temas, dudas, apuntes, setDone, setGrade, openApunte } = useStore()
   const [tab, setTab] = useState('entregas')
   const s = SUBJECTS[id]
   if (!s) return <NoEncontrada />
@@ -206,15 +206,13 @@ export default function Asignatura({ id }) {
                     misApuntes.map(a => (
                       <ListRow
                         key={a.id}
-                        href={a.url || href('/apuntes?s=' + id)}
-                        target={a.url ? '_blank' : undefined}
-                        rel={a.url ? 'noreferrer' : undefined}
+                        onClick={() => openApunte(a).catch(() => {})}
                         leading={<FileBadge type={a.type} />}
                         title={a.title}
                         meta={
                           <>
-                            <Avatar name={a.author} size={22} />
-                            {a.author} · {a.date} · {a.tema}
+                            <Avatar name={a.author} size={22} me={a.mine} />
+                            {a.mine ? 'Tú' : a.author} · {a.date} · {a.tema}
                           </>
                         }
                       />

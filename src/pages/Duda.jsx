@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Avatar,
   Button,
@@ -39,13 +39,18 @@ function Post({ voteKey, votes, myVote, author, mine, teacher, when, children })
 }
 
 export default function Duda({ id }) {
-  const { now, dudas, events, apuntes, addAnswer, acceptAnswer, deleteDuda } = useStore()
+  const { now, dudas, events, apuntes, addAnswer, acceptAnswer, deleteDuda, visit } = useStore()
   const [order, setOrder] = useState('votos')
   const [confirming, setConfirming] = useState(false)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(null)
   const d = dudas.find(x => String(x.id) === id)
+  /* Abrir la duda cuenta una visita (una vez por sesión) */
+  const exists = !!d
+  useEffect(() => {
+    if (exists) visit(id)
+  }, [exists, id, visit])
   if (!d) return <NoEncontrada />
 
   const isMine = d.mine

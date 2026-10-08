@@ -220,7 +220,9 @@ export async function crear() {
         form.append(k, v)
       }
       form.append('downloads', String(a.downloads || 0))
-      form.append('file', tinyPdf(a.title), a.title.replace(/[^\w]+/g, '_').slice(0, 40) + '.pdf')
+      const pdf = tinyPdf(a.title)
+      form.append('bytes', String(pdf.size))
+      form.append('file', pdf, a.title.replace(/[^\w]+/g, '_').slice(0, 40) + '.pdf')
       await create('apuntes', form)
     } else {
       await create('apuntes', {
