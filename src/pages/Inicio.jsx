@@ -3,6 +3,8 @@ import { SUBJECTS } from '../data/subjects.js'
 import { countdown, mediumDate, relative, shortDate, todayLong, todayShort } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
 import { nextUp, weekDays } from '../state/selectors.js'
+import { firstName } from '../lib/users.js'
+import { useAuth } from '../state/auth.jsx'
 import { useStore } from '../state/store.jsx'
 
 /*
@@ -10,7 +12,8 @@ import { useStore } from '../state/store.jsx'
  * Lo siguiente, lo que viene después y atajos al resto. El detalle vive en cada sección.
  */
 export default function Inicio() {
-  const { user, now, events, dudas, apuntes, welcomed, setWelcomed, setDone } = useStore()
+  const { user: auth } = useAuth()
+  const { now, events, dudas, apuntes, welcomed, setWelcomed, setDone } = useStore()
   const pending = events.filter(e => e.type !== 'festivo' && !e.done && e.at > now)
   const next = nextUp(events, now)
   const after = pending.filter(e => e !== next).slice(0, 3)
@@ -23,7 +26,7 @@ export default function Inicio() {
     <div className="nc-screen">
       <main className="nc-home">
         <header className="nc-greet">
-          <p className="na-t-subtitle na-muted">Hola, {user}</p>
+          <p className="na-t-subtitle na-muted">Hola, {firstName(auth)}</p>
           <h1 className="na-t-display-xl nc-only-desktop">{todayLong(now)}</h1>
           <h1 className="na-t-display-xl nc-only-mobile">{todayShort(now)}</h1>
           <p className="na-t-subtitle nc-greet-summary">{weekSummary(week)}</p>

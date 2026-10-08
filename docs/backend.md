@@ -15,6 +15,15 @@ backend/bin/pocketbase serve $P
 
 El panel queda en http://127.0.0.1:8090/_/. Ni `backend/bin/` ni `backend/pb_data/` van al repo.
 
+El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
+
+## Cuentas
+
+- **Registro y entrada:** con correo y contraseña (mínimo 8 caracteres, la regla de PocketBase), desde `#/registro` y `#/entrar`. Al crear la cuenta se entra directamente.
+- **Sesión:** PocketBase guarda el token en `localStorage` y se renueva al abrir la app.
+- **Errores:** los mensajes van en español (`src/lib/authErrors.js`). Al entrar no se dice si el correo existe.
+- **Recuperar la contraseña:** responde siempre igual, exista o no la cuenta. Para que el correo llegue de verdad hay que configurar SMTP en el panel (Settings → Mail settings), y está pendiente.
+
 ## Modelo
 
 La estructura es escuela → clases → personas. El plan, con la tabla de quién puede hacer qué, está en [`escuelas.md`](escuelas.md).

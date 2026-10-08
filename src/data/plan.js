@@ -104,9 +104,16 @@ export const PLAN = [
     goal: 'Que cada persona entre con su cuenta y vea lo de su escuela y su clase.',
     tasks: [
       {
+        id: 'landing',
+        title: 'Portada (landing)',
+        detail: 'Qué es NovaClass para quien aún no ha entrado: lo que hace, para quién y cómo empezar.',
+        done: true,
+      },
+      {
         id: 'login',
         title: 'Registro e inicio de sesión',
-        detail: 'Con el correo del centro; recuperar contraseña. Fuera el usuario fijo «Dracko».',
+        detail:
+          'Hecho: crear cuenta, entrar, salir y pedir el enlace de recuperación con PocketBase. Falta: configurar el correo (SMTP) para que lleguen los enlaces y verificar el correo al registrarse.',
       },
       {
         id: 'grupo',

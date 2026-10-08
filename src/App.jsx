@@ -1,9 +1,12 @@
-import { lazy, Suspense, useEffect, useRef } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AppBar, BottomNav, ErrorBoundary, LoadingState, OfflineBanner, TopBar } from './components/index.js'
 import { planFinished } from './data/plan.js'
 import { match, navigate, useRoute } from './lib/router.jsx'
 import Inicio from './pages/Inicio.jsx'
+import { Entrar, Recuperar, Registro } from './pages/publico/Cuenta.jsx'
+import Landing from './pages/publico/Landing.jsx'
 import NoEncontrada from './pages/NoEncontrada.jsx'
+import { useAuth } from './state/auth.jsx'
 import { useStore } from './state/store.jsx'
 
 /* Inicio va en el paquete principal; el resto de pantallas se cargan al entrar (mientras, se ve el esqueleto) */
@@ -37,9 +40,32 @@ function resolve(path) {
   return { section: null, Page: NoEncontrada, params: {} }
 }
 
+/* Pantallas para quien no ha entrado */
+const PUBLIC = { '/': Landing, '/entrar': Entrar, '/registro': Registro, '/recuperar': Recuperar }
+
+/* Con sesión, la app; sin ella, la portada y las pantallas de cuenta */
 export default function App() {
+  const { user } = useAuth()
   const path = useRoute()
-  const { section, Page, params } = resolve(path)
+  return user ? <PrivateApp path={path} /> : <PublicApp path={path} />
+}
+
+function PublicApp({ path }) {
+  const route = path.split('?')[0]
+  const Page = PUBLIC[route]
+  /* Una pantalla de la app sin sesión: se pide entrar y luego se vuelve a ella */
+  if (!Page) return <Entrar next={path} />
+  return <Page />
+}
+
+function PrivateApp({ path }) {
+  const route = path.split('?')[0]
+  const publicOnly = route !== '/' && route in PUBLIC
+  /* Ya con sesión, /entrar o /registro llevan a Inicio */
+  useEffect(() => {
+    if (publicOnly) navigate('/')
+  }, [publicOnly])
+  const { section, Page, params } = resolve(publicOnly ? '/' : path)
   usePlanKey(path)
   return (
     <div className="nc-app">
@@ -49,6 +75,7 @@ export default function App() {
       <TopBar active={section} className="nc-only-desktop" />
       <AppBar className="nc-only-mobile" />
       <OfflineBanner />
+      <DemoNotice />
       <ErrorBoundary resetKey={path}>
         <Suspense fallback={<LoadingState />}>
           <Page {...params} key={path} />
@@ -93,4 +120,32 @@ function skipToMain() {
   if (!main) return
   main.setAttribute('tabindex', '-1')
   main.focus()
+}
+
+/* Hasta conectar el store a PocketBase, lo que se ve dentro es una clase de ejemplo: se dice, y se puede cerrar */
+function DemoNotice() {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return sessionStorage.getItem('nc-demo-hidden') === '1'
+    } catch {
+      return false
+    }
+  })
+  if (hidden) return null
+  function hide() {
+    setHidden(true)
+    try {
+      sessionStorage.setItem('nc-demo-hidden', '1')
+    } catch {
+      /* sin almacenamiento: se vuelve a ver al recargar */
+    }
+  }
+  return (
+    <aside className="nc-demo" aria-label="Aviso">
+      <span>Estás viendo una clase de ejemplo. Muy pronto podrás unirte a la tuya con su código.</span>
+      <button type="button" aria-label="Cerrar aviso" onClick={hide}>
+        ×
+      </button>
+    </aside>
+  )
 }

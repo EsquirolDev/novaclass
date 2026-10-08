@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { cx } from '../lib/cx.js'
 import { href } from '../lib/router.jsx'
+import { useAuth } from '../state/auth.jsx'
 import { useStore } from '../state/store.jsx'
 import { Button, Pill } from './controls.jsx'
 import { Avatar } from './display.jsx'
@@ -30,7 +32,6 @@ function ThemeButton() {
 
 /* Barra superior (escritorio) */
 export function TopBar({ active, className }) {
-  const { user } = useStore()
   return (
     <header className={cx('na-topbar', className)}>
       <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>
@@ -50,7 +51,7 @@ export function TopBar({ active, className }) {
         </div>
         <ThemeButton />
         <Button variant="ghost" icon="bell" label="Notificaciones" />
-        <Avatar name={user} me size={44} />
+        <UserMenu size={44} />
       </div>
     </header>
   )
@@ -58,7 +59,6 @@ export function TopBar({ active, className }) {
 
 /* Barra superior compacta (móvil) */
 export function AppBar({ className }) {
-  const { user } = useStore()
   return (
     <header className={cx('nc-appbar', className)}>
       <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>
@@ -66,7 +66,7 @@ export function AppBar({ className }) {
       </a>
       <ThemeButton />
       <Button variant="ghost" icon="bell" label="Notificaciones" />
-      <Avatar name={user} me size={40} />
+      <UserMenu size={40} />
     </header>
   )
 }
@@ -86,5 +86,49 @@ export function BottomNav({ active, className }) {
         </a>
       ))}
     </nav>
+  )
+}
+
+/* Avatar de quien ha entrado: abre un menú con su nombre, su correo y «Cerrar sesión» */
+function UserMenu({ size }) {
+  const { user, logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  const box = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const away = e => !box.current?.contains(e.target) && setOpen(false)
+    const esc = e => e.key === 'Escape' && (setOpen(false), box.current?.querySelector('button')?.focus())
+    document.addEventListener('pointerdown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+  if (!user) return null
+  const name = user.name || user.email
+  return (
+    <div className="nc-usermenu" ref={box}>
+      <button
+        type="button"
+        className="nc-usermenu-btn"
+        aria-expanded={open}
+        aria-label={'Tu cuenta: ' + name}
+        onClick={() => setOpen(o => !o)}
+      >
+        <Avatar name={name} me size={size} />
+      </button>
+      {open ? (
+        <div className="nc-usermenu-pop">
+          <p className="who">
+            <b>{name}</b>
+            <span>{user.email}</span>
+          </p>
+          <Button variant="secondary" icon="logout" block onClick={logout}>
+            Cerrar sesión
+          </Button>
+        </div>
+      ) : null}
+    </div>
   )
 }

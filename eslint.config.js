@@ -24,7 +24,7 @@ export default [
       'react/jsx-uses-vars': 'error',
       /* Componentes usados en JSX sin importar (no-undef no los ve) */
       'react/jsx-no-undef': 'error',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useStore'] }],
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useStore', 'useAuth'] }],
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     },
   },
@@ -46,7 +46,7 @@ export default [
       },
     },
   },
-  /* Tests del backend: Node */
-  { files: ['backend/tests/**/*.js'], languageOptions: { globals: globals.node } },
+  /* Tests del backend y configuración: Node */
+  { files: ['backend/tests/**/*.js', '*.config.js'], languageOptions: { globals: globals.node } },
   prettier,
 ]
