@@ -57,28 +57,30 @@ export const PLAN = [
         id: 'stack',
         title: 'Elegir el backend',
         detail:
-          'Opción rápida: Supabase (Postgres + auth + archivos). Opción para aprender más: Node con Express o Fastify y Postgres propio.',
+          'PocketBase (SQLite, login, archivos, tiempo real y panel de admin) en un contenedor de Podman, detrás del túnel de Cloudflare.',
+        done: true,
       },
       {
         id: 'modelo',
         title: 'Modelo de datos',
-        detail: 'Usuarios, grupos, módulos, profes, horario, eventos (entrega, examen, festivo), dudas, respuestas, votos y apuntes.',
+        detail:
+          'Colecciones de PocketBase: usuarios, grupos, módulos, profes, horario, eventos (entrega, examen, festivo), dudas, respuestas, votos y apuntes.',
       },
       {
         id: 'api',
-        title: 'API con validación',
-        detail: 'Rutas para leer y escribir cada cosa del modelo, con validación de entrada y errores claros.',
+        title: 'Reglas de acceso y validación',
+        detail: 'Reglas de API de cada colección (quién lee, crea, edita y borra) y validación de campos; hooks en JS solo si hace falta.',
       },
       {
         id: 'seed',
         title: 'Pasar seed.js a la base de datos',
-        detail: 'Horario real de 1.º DAW, módulos, profes y eventos como datos de arranque.',
+        detail: 'Horario real de 1.º DAW, módulos, profes y eventos como migración de arranque de PocketBase.',
       },
       {
         id: 'store',
-        title: 'Conectar el store a la API',
+        title: 'Conectar el store a PocketBase',
         detail:
-          'Sustituir localStorage por peticiones, con caché y actualización optimista (marcar hecha, votar). El tema puede seguir en local.',
+          'SDK de PocketBase en vez de localStorage, con actualización optimista (marcar hecha, votar) y tiempo real en dudas. El tema puede seguir en local.',
       },
     ],
   },
