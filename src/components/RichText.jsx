@@ -19,7 +19,15 @@ export function CodeBlock({ code }) {
       <code>
         {code.split('\n').map((line, i) => (
           <span key={i} style={{ display: 'block' }}>
-            {line.split(SQL).map((p, j) => (j % 2 ? <span key={j} className="k">{p}</span> : p))}
+            {line.split(SQL).map((p, j) =>
+              j % 2 ? (
+                <span key={j} className="k">
+                  {p}
+                </span>
+              ) : (
+                p
+              ),
+            )}
           </span>
         ))}
       </code>
@@ -29,5 +37,11 @@ export function CodeBlock({ code }) {
 
 /* Párrafos separados por línea en blanco */
 export function Paragraphs({ text }) {
-  return String(text).split(/\n{2,}/).map((p, i) => <p key={i}><Inline text={p} /></p>)
+  return String(text)
+    .split(/\n{2,}/)
+    .map((p, i) => (
+      <p key={i}>
+        <Inline text={p} />
+      </p>
+    ))
 }

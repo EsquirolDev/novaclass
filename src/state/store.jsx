@@ -7,7 +7,18 @@ import { parseDate } from '../lib/dates.js'
  * (entregas hechas, votos, dudas, respuestas, apuntes, tema) se guarda en localStorage.
  */
 const KEY = 'novaclass:v1'
-const EMPTY = { done: {}, votes: {}, dudas: [], answers: {}, accepted: {}, apuntes: [], theme: 'dark', welcomed: false, plan: {}, planClosed: false }
+const EMPTY = {
+  done: {},
+  votes: {},
+  dudas: [],
+  answers: {},
+  accepted: {},
+  apuntes: [],
+  theme: 'dark',
+  welcomed: false,
+  plan: {},
+  planClosed: false,
+}
 
 function load() {
   try {
@@ -38,7 +49,7 @@ function useNow() {
   return now
 }
 
-export function dudaStatus(d) {
+function dudaStatus(d) {
   if (d.accepted) return 'resuelta'
   return d.answers.length ? 'abierta' : 'sin-responder'
 }
@@ -54,55 +65,74 @@ export function StoreProvider({ children }) {
 
   const update = useCallback(fn => setState(s => ({ ...s, ...fn(s) })), [])
 
-  const events = useMemo(() => EVENTS
-    .map(e => ({ ...e, done: e.id in state.done ? state.done[e.id] : !!e.done, at: parseDate(e.date, e.time) }))
-    .sort((a, b) => a.at - b.at), [state.done])
+  const events = useMemo(
+    () =>
+      EVENTS.map(e => ({ ...e, done: e.id in state.done ? state.done[e.id] : !!e.done, at: parseDate(e.date, e.time) })).sort(
+        (a, b) => a.at - b.at,
+      ),
+    [state.done],
+  )
 
-  const dudas = useMemo(() => [...state.dudas, ...DUDAS].map(d => {
-    const answers = [...d.answers, ...(state.answers[d.id] || [])].map(a => ({
-      ...a, votes: a.votes + voteDelta(state.votes[`${d.id}:${a.id}`]),
-      myVote: state.votes[`${d.id}:${a.id}`] || null,
-    }))
-    const accepted = state.accepted[d.id] !== undefined ? state.accepted[d.id] : d.accepted
-    const full = { ...d, answers, accepted, votes: d.votes + voteDelta(state.votes[d.id]), myVote: state.votes[d.id] || null }
-    return { ...full, status: dudaStatus(full) }
-  }), [state.dudas, state.answers, state.accepted, state.votes])
+  const dudas = useMemo(
+    () =>
+      [...state.dudas, ...DUDAS].map(d => {
+        const answers = [...d.answers, ...(state.answers[d.id] || [])].map(a => ({
+          ...a,
+          votes: a.votes + voteDelta(state.votes[`${d.id}:${a.id}`]),
+          myVote: state.votes[`${d.id}:${a.id}`] || null,
+        }))
+        const accepted = state.accepted[d.id] !== undefined ? state.accepted[d.id] : d.accepted
+        const full = { ...d, answers, accepted, votes: d.votes + voteDelta(state.votes[d.id]), myVote: state.votes[d.id] || null }
+        return { ...full, status: dudaStatus(full) }
+      }),
+    [state.dudas, state.answers, state.accepted, state.votes],
+  )
 
   const apuntes = useMemo(() => [...state.apuntes, ...APUNTES], [state.apuntes])
 
-  const value = useMemo(() => ({
-    user: USER,
-    now,
-    theme: state.theme,
-    welcomed: state.welcomed,
-    plan: state.plan,
-    planClosed: state.planClosed,
-    events,
-    dudas,
-    apuntes,
-    setTheme: theme => update(() => ({ theme })),
-    setWelcomed: welcomed => update(() => ({ welcomed })),
-    setDone: (id, done) => update(s => ({ done: { ...s.done, [id]: done } })),
-    /* key: id de duda, o «idDuda:idRespuesta» */
-    vote: (key, dir) => update(s => ({ votes: { ...s.votes, [key]: s.votes[key] === dir ? null : dir } })),
-    /* kind: 'rapida' (una línea) o 'general' (con explicación, código y etiquetas) */
-    addDuda: ({ kind = 'general', subject, title, body = '', code = '', tags = [] }) => {
-      const id = Date.now()
-      update(s => ({ dudas: [{ id, kind, subject, title, body, code, votes: 0, author: USER, when: 'ahora', views: 0, tags, answers: [] }, ...s.dudas] }))
-      return id
-    },
-    addAnswer: (dudaId, body) => update(s => ({
-      answers: { ...s.answers, [dudaId]: [...(s.answers[dudaId] || []), { id: 'u' + Date.now(), author: USER, when: 'ahora', votes: 0, body }] },
-    })),
-    acceptAnswer: (dudaId, answerId) => update(s => ({ accepted: { ...s.accepted, [dudaId]: answerId } })),
-    addApunte: apunte => update(s => ({
-      apuntes: [{ id: 'u' + Date.now(), author: USER, date: 'hoy', downloads: 0, ...apunte }, ...s.apuntes],
-    })),
-    /* Plan de mejoras (tecla M): tareas marcadas y si ya se cerró para siempre */
-    setPlanTask: (id, done) => update(s => ({ plan: { ...s.plan, [id]: done } })),
-    closePlan: () => update(() => ({ planClosed: true })),
-    reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
-  }), [now, state.theme, state.welcomed, state.plan, state.planClosed, events, dudas, apuntes, update])
+  const value = useMemo(
+    () => ({
+      user: USER,
+      now,
+      theme: state.theme,
+      welcomed: state.welcomed,
+      plan: state.plan,
+      planClosed: state.planClosed,
+      events,
+      dudas,
+      apuntes,
+      setTheme: theme => update(() => ({ theme })),
+      setWelcomed: welcomed => update(() => ({ welcomed })),
+      setDone: (id, done) => update(s => ({ done: { ...s.done, [id]: done } })),
+      /* key: id de duda, o «idDuda:idRespuesta» */
+      vote: (key, dir) => update(s => ({ votes: { ...s.votes, [key]: s.votes[key] === dir ? null : dir } })),
+      /* kind: 'rapida' (una línea) o 'general' (con explicación, código y etiquetas) */
+      addDuda: ({ kind = 'general', subject, title, body = '', code = '', tags = [] }) => {
+        const id = Date.now()
+        update(s => ({
+          dudas: [{ id, kind, subject, title, body, code, votes: 0, author: USER, when: 'ahora', views: 0, tags, answers: [] }, ...s.dudas],
+        }))
+        return id
+      },
+      addAnswer: (dudaId, body) =>
+        update(s => ({
+          answers: {
+            ...s.answers,
+            [dudaId]: [...(s.answers[dudaId] || []), { id: 'u' + Date.now(), author: USER, when: 'ahora', votes: 0, body }],
+          },
+        })),
+      acceptAnswer: (dudaId, answerId) => update(s => ({ accepted: { ...s.accepted, [dudaId]: answerId } })),
+      addApunte: apunte =>
+        update(s => ({
+          apuntes: [{ id: 'u' + Date.now(), author: USER, date: 'hoy', downloads: 0, ...apunte }, ...s.apuntes],
+        })),
+      /* Plan de mejoras (tecla M): tareas marcadas y si ya se cerró para siempre */
+      setPlanTask: (id, done) => update(s => ({ plan: { ...s.plan, [id]: done } })),
+      closePlan: () => update(() => ({ planClosed: true })),
+      reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
+    }),
+    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, dudas, apuntes, update],
+  )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -20,7 +20,9 @@ function ThemeButton() {
   const dark = theme === 'dark'
   return (
     <Button
-      variant="ghost" icon={dark ? 'sun' : 'moon'} label={dark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+      variant="ghost"
+      icon={dark ? 'sun' : 'moon'}
+      label={dark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
       onClick={() => setTheme(dark ? 'light' : 'dark')}
     />
   )
@@ -31,14 +33,21 @@ export function TopBar({ active, className }) {
   const { user } = useStore()
   return (
     <header className={cx('na-topbar', className)}>
-      <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>{APP_NAME}</a>
+      <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>
+        {APP_NAME}
+      </a>
       <nav className="na-nav" aria-label="Principal">
         {NAV.map(n => (
-          <Pill key={n.id} href={href(n.to)} variant="ghost" current={n.id === active} icon={n.icon}>{n.label}</Pill>
+          <Pill key={n.id} href={href(n.to)} variant="ghost" current={n.id === active} icon={n.icon}>
+            {n.label}
+          </Pill>
         ))}
       </nav>
       <div className="na-topbar-end">
-        <div className="na-search" role="search"><Icon name="search" size={18} />Buscar en clase<kbd>Ctrl K</kbd></div>
+        <div className="na-search" role="search">
+          <Icon name="search" size={18} />
+          Buscar en clase<kbd>Ctrl K</kbd>
+        </div>
         <ThemeButton />
         <Button variant="ghost" icon="bell" label="Notificaciones" />
         <Avatar name={user} me size={44} />
@@ -52,7 +61,9 @@ export function AppBar({ className }) {
   const { user } = useStore()
   return (
     <header className={cx('nc-appbar', className)}>
-      <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>{APP_NAME}</a>
+      <a className="na-brand" href={href('/')} style={{ textDecoration: 'none' }}>
+        {APP_NAME}
+      </a>
       <ThemeButton />
       <Button variant="ghost" icon="bell" label="Notificaciones" />
       <Avatar name={user} me size={40} />
@@ -68,7 +79,9 @@ export function BottomNav({ active, className }) {
     <nav className={cx('na-bottomnav', className)} aria-label="Principal">
       {BNAV.map(n => (
         <a key={n.id} href={href(n.to)} className="na-bn-item" aria-current={n.id === active ? 'page' : undefined}>
-          <span className="na-bn-ico"><Icon name={n.icon} size={22} /></span>
+          <span className="na-bn-ico">
+            <Icon name={n.icon} size={22} />
+          </span>
           {n.label}
         </a>
       ))}

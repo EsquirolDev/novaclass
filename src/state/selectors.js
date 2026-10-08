@@ -3,7 +3,14 @@ import { addDays, DOW_LONG, DOW_SHORT, isoDate, sameDay, startOfWeek } from '../
 
 /* Props de EventChip a partir de un evento */
 export function chip(e) {
-  return { id: e.id, type: e.type, subject: e.subject, title: e.title, time: e.done ? undefined : e.type === 'festivo' ? undefined : e.time, done: e.done }
+  return {
+    id: e.id,
+    type: e.type,
+    subject: e.subject,
+    title: e.title,
+    time: e.done ? undefined : e.type === 'festivo' ? undefined : e.time,
+    done: e.done,
+  }
 }
 
 export function eventsOn(events, iso) {

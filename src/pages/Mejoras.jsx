@@ -26,7 +26,9 @@ export default function Mejoras() {
           <div>
             <p className="na-t-eyebrow na-muted">Plan de actuación</p>
             <h1 className="na-t-display-xl">Mejoras</h1>
-            <p className="na-t-subtitle na-muted">Del frontend con datos de ejemplo a una app que use la clase. Pulsa <kbd>M</kbd> para abrir o cerrar esta pantalla.</p>
+            <p className="na-t-subtitle na-muted">
+              Del frontend con datos de ejemplo a una app que use la clase. Pulsa <kbd>M</kbd> para abrir o cerrar esta pantalla.
+            </p>
           </div>
         </div>
 
@@ -39,10 +41,14 @@ export default function Mejoras() {
                 <p className="na-t-subtitle">Plan terminado</p>
                 <p className="na-muted">Al salir de aquí esta pantalla desaparece y la tecla M deja de abrirla.</p>
               </div>
-              <Button variant="primary" onClick={close}>Cerrar el plan</Button>
+              <Button variant="primary" onClick={close}>
+                Cerrar el plan
+              </Button>
             </div>
           ) : (
-            <p className="na-t-label na-muted">Lo siguiente: <b className="nc-plan-next">{next.title}</b></p>
+            <p className="na-t-label na-muted">
+              Lo siguiente: <b className="nc-plan-next">{next.title}</b>
+            </p>
           )}
         </div>
 
@@ -52,8 +58,20 @@ export default function Mejoras() {
             return (
               <li key={phase.id}>
                 <Card
-                  title={<div className="nc-plan-head"><span className="num na-num">{i + 1}</span><div><h2 className="na-t-title">{phase.title}</h2><p className="na-muted">{phase.goal}</p></div></div>}
-                  action={<span className={cx('nc-plan-count na-num', n === phase.tasks.length && 'all')}>{n}/{phase.tasks.length}</span>}
+                  title={
+                    <div className="nc-plan-head">
+                      <span className="num na-num">{i + 1}</span>
+                      <div>
+                        <h2 className="na-t-title">{phase.title}</h2>
+                        <p className="na-muted">{phase.goal}</p>
+                      </div>
+                    </div>
+                  }
+                  action={
+                    <span className={cx('nc-plan-count na-num', n === phase.tasks.length && 'all')}>
+                      {n}/{phase.tasks.length}
+                    </span>
+                  }
                 >
                   <ul className="nc-plan-tasks">
                     {phase.tasks.map(t => {

@@ -8,12 +8,13 @@ import { ShapeEl, Sigil } from './Sigil.jsx'
 export function Card({ subject, tab, title, titleAs, action, children, className, flush, as, ...rest }) {
   const Tag = as || 'section'
   const TitleTag = titleAs || 'h2'
-  const head = (title || action) ? (
-    <div className="na-card-head">
-      {typeof title === 'string' ? <TitleTag className="na-t-title">{title}</TitleTag> : title}
-      {action || null}
-    </div>
-  ) : null
+  const head =
+    title || action ? (
+      <div className="na-card-head">
+        {typeof title === 'string' ? <TitleTag className="na-t-title">{title}</TitleTag> : title}
+        {action || null}
+      </div>
+    ) : null
   const card = (
     <Tag {...rest} className={cx('na-card', flush && 'na-card--flush', !subject && className)}>
       {head}
@@ -25,8 +26,11 @@ export function Card({ subject, tab, title, titleAs, action, children, className
   return (
     <div className={cx('na-folder', className)} style={subjectVars(s.id)}>
       <div className="na-folder-tab">
-        <Sigil subject={s.id} size={12} tone="current" />{tab || s.code}
-        <svg className="na-folder-curve" viewBox="0 0 18 18" aria-hidden="true"><path d="M0 0h1a16 16 0 0 0 16 16h1v2H0z" /></svg>
+        <Sigil subject={s.id} size={12} tone="current" />
+        {tab || s.code}
+        <svg className="na-folder-curve" viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M0 0h1a16 16 0 0 0 16 16h1v2H0z" />
+        </svg>
       </div>
       {card}
     </div>
@@ -55,17 +59,25 @@ export function ProgressSegments({ done = 0, total = 1, subject, label, noun = '
       {hideLabel ? null : (
         <div className="na-progress-label">
           <span>{label || 'Progreso'}</span>
-          <span><strong>{done + '/' + total}</strong>{' ' + noun}</span>
+          <span>
+            <strong>{done + '/' + total}</strong>
+            {' ' + noun}
+          </span>
         </div>
       )}
       <div
-        className={cx('na-progress-track', useBar && 'na-progress-track--bar')} role="progressbar"
-        aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}
+        className={cx('na-progress-track', useBar && 'na-progress-track--bar')}
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-valuenow={done}
         aria-label={(ariaLabel || (subject ? SUBJECTS[subject].name + ': ' : '')) + `${done} de ${total} ${noun} hechas`}
       >
-        {useBar
-          ? <span className="na-progress-fill" style={{ width: (done / total) * 100 + '%' }} />
-          : Array.from({ length: total }, (_, i) => <span key={i} className={cx('na-progress-seg', i < done && 'is-done')} />)}
+        {useBar ? (
+          <span className="na-progress-fill" style={{ width: (done / total) * 100 + '%' }} />
+        ) : (
+          Array.from({ length: total }, (_, i) => <span key={i} className={cx('na-progress-seg', i < done && 'is-done')} />)
+        )}
       </div>
     </div>
   )
@@ -94,22 +106,41 @@ export function EventChip({ type = 'entrega', subject, title, time, done, compac
   const isExam = type === 'examen'
   const isHoliday = type === 'festivo'
   const Tag = onClick ? 'button' : 'div'
-  const label = (isExam ? 'Examen' : isHoliday ? 'Festivo' : 'Entrega') + (s ? ' de ' + s.name : '') + ': ' + title + (time ? ', ' + time : '') + (done ? ' (hecha)' : '')
+  const label =
+    (isExam ? 'Examen' : isHoliday ? 'Festivo' : 'Entrega') +
+    (s ? ' de ' + s.name : '') +
+    ': ' +
+    title +
+    (time ? ', ' + time : '') +
+    (done ? ' (hecha)' : '')
   const attrs = {
     className: cx('na-chip', `na-chip--${type}`, done && 'is-done', compact && 'is-compact', selected && 'is-selected', className),
-    style: subjectVars(subject), onClick, 'aria-label': label, title: label,
+    style: subjectVars(subject),
+    onClick,
+    'aria-label': label,
+    title: label,
   }
-  if (Tag === 'button') { attrs.type = 'button'; attrs['aria-pressed'] = !!selected }
-  const lead = done ? <Icon name="check" size={14} strokeWidth={2.6} />
-    : isExam ? <Icon name="flag" size={14} strokeWidth={2.4} />
-    : isHoliday ? null
-    : <Sigil subject={subject} size={11} tone="current" />
+  if (Tag === 'button') {
+    attrs.type = 'button'
+    attrs['aria-pressed'] = !!selected
+  }
+  const lead = done ? (
+    <Icon name="check" size={14} strokeWidth={2.6} />
+  ) : isExam ? (
+    <Icon name="flag" size={14} strokeWidth={2.4} />
+  ) : isHoliday ? null : (
+    <Sigil subject={subject} size={11} tone="current" />
+  )
   return (
     <Tag {...attrs}>
       {lead}
       {isExam && !compact ? <span className="na-chip-kind">Examen</span> : null}
       <span className="na-chip-text">{title}</span>
-      {time && !compact ? <span className="na-num" style={{ fontWeight: 700 }}>{time}</span> : null}
+      {time && !compact ? (
+        <span className="na-num" style={{ fontWeight: 700 }}>
+          {time}
+        </span>
+      ) : null}
     </Tag>
   )
 }
@@ -117,10 +148,15 @@ export function EventChip({ type = 'entrega', subject, title, time, done, compac
 const pad = n => (n < 10 ? '0' : '') + n
 
 export function Countdown({ days = 0, hours = 0, minutes = 0, size, className }) {
-  const units = [[days, days === 1 ? 'día' : 'días'], [pad(hours), 'horas'], [pad(minutes), 'min']]
+  const units = [
+    [days, days === 1 ? 'día' : 'días'],
+    [pad(hours), 'horas'],
+    [pad(minutes), 'min'],
+  ]
   return (
     <div
-      className={cx('na-count', size === 'sm' && 'na-count--sm', className)} role="timer"
+      className={cx('na-count', size === 'sm' && 'na-count--sm', className)}
+      role="timer"
       aria-label={`Faltan ${days}${days === 1 ? ' día, ' : ' días, '}${hours} horas y ${minutes} minutos`}
     >
       {units.map((u, i) => (
@@ -134,14 +170,21 @@ export function Countdown({ days = 0, hours = 0, minutes = 0, size, className })
 }
 
 function initials(name) {
-  return String(name || '?').split(/\s+/).map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase()
+  return String(name || '?')
+    .split(/\s+/)
+    .map(p => p.charAt(0))
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 }
 
 /* Avatar neutro: el color queda reservado a las asignaturas */
 export function Avatar({ name, size = 36, me, className }) {
   return (
     <span
-      className={cx('na-avatar', me && 'is-me', className)} role="img" aria-label={name}
+      className={cx('na-avatar', me && 'is-me', className)}
+      role="img"
+      aria-label={name}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
     >
       {initials(name)}
@@ -150,16 +193,38 @@ export function Avatar({ name, size = 36, me, className }) {
 }
 
 export function StatusBadge({ status = 'sin-responder', answers }) {
-  if (status === 'resuelta') return <span className="na-status na-status--resuelta"><Icon name="check" size={14} strokeWidth={2.8} />Resuelta</span>
-  if (status === 'sin-responder') return <span className="na-status na-status--sin-responder"><Icon name="clock" size={14} strokeWidth={2.4} />Sin responder</span>
-  return <span className="na-status na-status--abierta"><Icon name="message" size={14} strokeWidth={2.4} />{answers + (answers === 1 ? ' respuesta' : ' respuestas')}</span>
+  if (status === 'resuelta')
+    return (
+      <span className="na-status na-status--resuelta">
+        <Icon name="check" size={14} strokeWidth={2.8} />
+        Resuelta
+      </span>
+    )
+  if (status === 'sin-responder')
+    return (
+      <span className="na-status na-status--sin-responder">
+        <Icon name="clock" size={14} strokeWidth={2.4} />
+        Sin responder
+      </span>
+    )
+  return (
+    <span className="na-status na-status--abierta">
+      <Icon name="message" size={14} strokeWidth={2.4} />
+      {answers + (answers === 1 ? ' respuesta' : ' respuestas')}
+    </span>
+  )
 }
 
 const FILE = { pdf: ['pdf', 'PDF'], enlace: ['link', 'Enlace'], nota: ['note', 'Nota'] }
 
 export function FileBadge({ type, className }) {
   const f = FILE[type] || FILE.nota
-  return <span className={cx('na-file', className)}><Icon name={f[0]} size={14} strokeWidth={2.4} />{f[1]}</span>
+  return (
+    <span className={cx('na-file', className)}>
+      <Icon name={f[0]} size={14} strokeWidth={2.4} />
+      {f[1]}
+    </span>
+  )
 }
 
 export function SectionTitle({ children, action, to, end, as, className }) {
@@ -167,9 +232,14 @@ export function SectionTitle({ children, action, to, end, as, className }) {
   return (
     <div className={cx('na-sectitle', className)}>
       <T className="na-t-title">{children}</T>
-      {action
-        ? <a className="na-link" href={href(to || '/')}>{action}<Icon name="arrow-right" size={16} strokeWidth={2.4} /></a>
-        : end || null}
+      {action ? (
+        <a className="na-link" href={href(to || '/')}>
+          {action}
+          <Icon name="arrow-right" size={16} strokeWidth={2.4} />
+        </a>
+      ) : (
+        end || null
+      )}
     </div>
   )
 }

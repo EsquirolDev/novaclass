@@ -33,7 +33,17 @@ const P = {
   'arrow-right': ['M5 12h14', 'M13 6l6 6-6 6'],
   more: ['M6 12h.01', 'M12 12h.01', 'M18 12h.01'],
   folder: ['M3.5 6.5a1 1 0 0 1 1-1H9l2 2.5h8.5a1 1 0 0 1 1 1V18.5a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z'],
-  sun: ['M12 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8z', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'],
+  sun: [
+    'M12 8a4 4 0 1 1 0 8a4 4 0 1 1 0-8z',
+    'M12 2.5v2',
+    'M12 19.5v2',
+    'M2.5 12h2',
+    'M19.5 12h2',
+    'M5.3 5.3l1.4 1.4',
+    'M17.3 17.3l1.4 1.4',
+    'M5.3 18.7l1.4-1.4',
+    'M17.3 6.7l1.4-1.4',
+  ],
   moon: ['M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z'],
 }
 
@@ -41,12 +51,23 @@ export function Icon({ name, size = 20, strokeWidth = 2, label, className }) {
   const paths = P[name] || P.more
   return (
     <svg
-      className={cx('na-icon', className)} width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
-      aria-hidden={label ? undefined : true} role={label ? 'img' : undefined} focusable="false"
+      className={cx('na-icon', className)}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={label ? undefined : true}
+      role={label ? 'img' : undefined}
+      focusable="false"
     >
       {label ? <title>{label}</title> : null}
-      {paths.map((d, i) => <path key={i} d={d} />)}
+      {paths.map((d, i) => (
+        <path key={i} d={d} />
+      ))}
     </svg>
   )
 }

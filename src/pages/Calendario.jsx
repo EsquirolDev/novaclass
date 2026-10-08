@@ -3,12 +3,20 @@ import { Button, EventChip, Icon, ListRow, Pill, Sigil, StatusBadge, SubjectTag,
 import { BREAK, SESSIONS } from '../data/seed.js'
 import { OTHER_ORDER, SUBJECTS, SUBJECT_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
-import {
-  addDays, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, relative, sameDay, startOfWeek,
-} from '../lib/dates.js'
+import { addDays, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, relative, sameDay, startOfWeek } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
 import {
-  blocksFor, classInfo, DAY_SHORT, DAYS, dayEnd, nowStatus, teacherNames, teacherShort, toHours, totalHours, weeklyHours,
+  blocksFor,
+  classInfo,
+  DAY_SHORT,
+  DAYS,
+  dayEnd,
+  nowStatus,
+  teacherNames,
+  teacherShort,
+  toHours,
+  totalHours,
+  weeklyHours,
 } from '../lib/schedule.js'
 import { chip } from '../state/selectors.js'
 import { useStore } from '../state/store.jsx'
@@ -56,42 +64,78 @@ export default function Calendario() {
   }
   const mon = startOfWeek(ref)
   const sun = addDays(mon, 6)
-  const title = horario ? 'Horario de 1.º DAW' : view === 'mes'
-    ? monthTitle(ref)
-    : `Semana del ${mon.getDate()}${mon.getMonth() !== sun.getMonth() ? ' ' + MONTHS_SHORT[mon.getMonth()] : ''} al ${sun.getDate()} ${MONTHS_SHORT[sun.getMonth()]}`
+  const title = horario
+    ? 'Horario de 1.º DAW'
+    : view === 'mes'
+      ? monthTitle(ref)
+      : `Semana del ${mon.getDate()}${mon.getMonth() !== sun.getMonth() ? ' ' + MONTHS_SHORT[mon.getMonth()] : ''} al ${sun.getDate()} ${MONTHS_SHORT[sun.getMonth()]}`
 
   return (
     <div className="nc-screen">
       <div className={cx('nc-split', 'nc-split--cal', !sel && 'is-single')}>
         <main className="nc-main nc-main--tight">
           <div className="nc-cal-bar">
-            <Tabs label="Vista" value={view} onChange={setView} items={[{ id: 'mes', label: 'Mes', icon: 'month' }, { id: 'semana', label: 'Semana', icon: 'week' }, { id: 'horario', label: 'Horario', icon: 'clock' }]} />
+            <Tabs
+              label="Vista"
+              value={view}
+              onChange={setView}
+              items={[
+                { id: 'mes', label: 'Mes', icon: 'month' },
+                { id: 'semana', label: 'Semana', icon: 'week' },
+                { id: 'horario', label: 'Horario', icon: 'clock' },
+              ]}
+            />
             <div className="nc-cal-nav" hidden={horario}>
               <Button variant="secondary" icon="chevron-left" label="Anterior" onClick={() => move(-1)} />
-              <Button variant="secondary" onClick={() => setRef(now)}>Hoy</Button>
+              <Button variant="secondary" onClick={() => setRef(now)}>
+                Hoy
+              </Button>
               <Button variant="secondary" icon="chevron-right" label="Siguiente" onClick={() => move(1)} />
             </div>
           </div>
           <h1 className="na-t-display-xl nc-cal-title">{title}</h1>
           <div className="nc-filters" role="group" aria-label="Filtrar por asignatura">
-            <Pill toggle selected={all} onClick={() => setActive(allOn())}>Todas</Pill>
+            <Pill toggle selected={all} onClick={() => setActive(allOn())}>
+              Todas
+            </Pill>
             <span className="nc-sep" aria-hidden="true" />
             {FILTER_ORDER.map(k => (
-              <Pill key={k} toggle subject={k} selected={active[k] && !all} onClick={() => toggle(k)}>{subjectOf(k).code}</Pill>
+              <Pill key={k} toggle subject={k} selected={active[k] && !all} onClick={() => toggle(k)}>
+                {subjectOf(k).code}
+              </Pill>
             ))}
             {view === 'mes' ? (
               <div className="nc-legend nc-only-desktop" aria-hidden="true">
-                <span><span className="na-chip na-chip--entrega" style={subjectVars('pro')}><Sigil subject="pro" size={10} tone="current" />Entrega</span></span>
-                <span><span className="na-chip na-chip--examen" style={subjectVars('pro')}><Icon name="flag" size={13} strokeWidth={2.4} />Examen</span></span>
-                <span><span className="na-chip is-done"><Icon name="check" size={13} strokeWidth={2.6} /><s>Hecha</s></span></span>
+                <span>
+                  <span className="na-chip na-chip--entrega" style={subjectVars('pro')}>
+                    <Sigil subject="pro" size={10} tone="current" />
+                    Entrega
+                  </span>
+                </span>
+                <span>
+                  <span className="na-chip na-chip--examen" style={subjectVars('pro')}>
+                    <Icon name="flag" size={13} strokeWidth={2.4} />
+                    Examen
+                  </span>
+                </span>
+                <span>
+                  <span className="na-chip is-done">
+                    <Icon name="check" size={13} strokeWidth={2.6} />
+                    <s>Hecha</s>
+                  </span>
+                </span>
               </div>
             ) : null}
           </div>
-          {horario ? <Horario now={now} active={active} /> : (
+          {horario ? (
+            <Horario now={now} active={active} />
+          ) : (
             <div className="nc-scroll-x">
-              {view === 'mes'
-                ? <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
-                : <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />}
+              {view === 'mes' ? (
+                <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+              ) : (
+                <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+              )}
             </div>
           )}
         </main>
@@ -109,16 +153,30 @@ function MonthGrid({ refDate, now, events, sel, onSel }) {
   const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i))
   return (
     <div className="nc-month" role="grid" aria-label={monthTitle(refDate)}>
-      {DOWS.map(d => <div key={d} className="nc-dow">{d}</div>)}
+      {DOWS.map(d => (
+        <div key={d} className="nc-dow">
+          {d}
+        </div>
+      ))}
       {cells.map((d, i) => {
         const out = d.getMonth() !== refDate.getMonth()
         const today = sameDay(d, now)
         const evs = out ? [] : events.filter(e => e.date === isoDate(d))
         return (
-          <div key={i} className={cx('nc-cell', out && 'out', i % 7 >= 5 && 'we', today && 'today')} aria-current={today ? 'date' : undefined}>
+          <div
+            key={i}
+            className={cx('nc-cell', out && 'out', i % 7 >= 5 && 'we', today && 'today')}
+            aria-current={today ? 'date' : undefined}
+          >
             <span className="d">{d.getDate()}</span>
             {evs.slice(0, 2).map(e => (
-              <EventChip key={e.id} {...chip(e)} compact selected={sel && sel.id === e.id} onClick={e.subject ? () => onSel(e) : undefined} />
+              <EventChip
+                key={e.id}
+                {...chip(e)}
+                compact
+                selected={sel && sel.id === e.id}
+                onClick={e.subject ? () => onSel(e) : undefined}
+              />
             ))}
             {evs.length > 2 ? <span className="more">+{evs.length - 2} más</span> : null}
           </div>
@@ -145,29 +203,62 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
         const blocks = i < 5 ? blocksFor(i + 1) : []
         const hours = holiday ? 'Festivo' : blocks.length ? `Clase de ${trim(blocks[0].start)} a ${trim(dayEnd(i + 1))}` : 'Sin clase'
         return (
-          <section key={iso} role="listitem" className={cx('nc-aday', today && 'today', (i >= 5 || holiday) && 'off')} aria-current={today ? 'date' : undefined} aria-label={longDate(iso)}>
+          <section
+            key={iso}
+            role="listitem"
+            className={cx('nc-aday', today && 'today', (i >= 5 || holiday) && 'off')}
+            aria-current={today ? 'date' : undefined}
+            aria-label={longDate(iso)}
+          >
             <div className="dt">
               <span className="dow">{today ? 'Hoy' : DOWS[i]}</span>
               <b className="na-num">{d.getDate()}</b>
             </div>
             <div className="evs">
               <span className="hrs">{hours}</span>
-              {items.length ? items.map(e => {
-                const exam = e.type === 'examen'
-                const on = !!(sel && sel.id === e.id)
-                return (
-                  <ListRow
-                    key={e.id} subject={e.subject} done={e.done} onClick={() => onSel(e)} aria-pressed={on}
-                    className={cx('nc-arow', exam && 'exam', on && 'is-sel')}
-                    leading={exam
-                      ? <span className="nc-aicon exam"><Icon name="flag" size={18} strokeWidth={2.4} /></span>
-                      : <span className="nc-aicon">{e.done ? <Icon name="check" size={18} strokeWidth={2.6} /> : <Sigil subject={e.subject} size={14} tone="current" />}</span>}
-                    title={e.title}
-                    meta={<><SubjectTag subject={e.subject} /><span>{exam ? `Examen · ${e.time}–${e.end || ''}` : e.done ? 'Entrega · hecha' : `Entrega · hasta las ${e.time}`}</span></>}
-                    trailing={e.done ? null : <span className="nc-arel">{relative(now, e.date)}</span>}
-                  />
-                )
-              }) : <span className="empty">{i >= 5 || holiday ? 'Libre' : 'Nada que entregar'}</span>}
+              {items.length ? (
+                items.map(e => {
+                  const exam = e.type === 'examen'
+                  const on = !!(sel && sel.id === e.id)
+                  return (
+                    <ListRow
+                      key={e.id}
+                      subject={e.subject}
+                      done={e.done}
+                      onClick={() => onSel(e)}
+                      aria-pressed={on}
+                      className={cx('nc-arow', exam && 'exam', on && 'is-sel')}
+                      leading={
+                        exam ? (
+                          <span className="nc-aicon exam">
+                            <Icon name="flag" size={18} strokeWidth={2.4} />
+                          </span>
+                        ) : (
+                          <span className="nc-aicon">
+                            {e.done ? (
+                              <Icon name="check" size={18} strokeWidth={2.6} />
+                            ) : (
+                              <Sigil subject={e.subject} size={14} tone="current" />
+                            )}
+                          </span>
+                        )
+                      }
+                      title={e.title}
+                      meta={
+                        <>
+                          <SubjectTag subject={e.subject} />
+                          <span>
+                            {exam ? `Examen · ${e.time}–${e.end || ''}` : e.done ? 'Entrega · hecha' : `Entrega · hasta las ${e.time}`}
+                          </span>
+                        </>
+                      }
+                      trailing={e.done ? null : <span className="nc-arel">{relative(now, e.date)}</span>}
+                    />
+                  )
+                })
+              ) : (
+                <span className="empty">{i >= 5 || holiday ? 'Libre' : 'Nada que entregar'}</span>
+              )}
             </div>
           </section>
         )
@@ -181,14 +272,28 @@ const trim = t => t.replace(/^0/, '')
 /* Una clase del horario: sigilo + código, nombre, horas y profe. Los módulos sin asignatura van en neutro. */
 function ClassBlock({ block: b, style, className, current }) {
   if (!b.id) {
-    return <div className={cx('blk', 'free', className)} style={style}><span>Libre</span></div>
+    return (
+      <div className={cx('blk', 'free', className)} style={style}>
+        <span>Libre</span>
+      </div>
+    )
   }
   const c = classInfo(b.id)
   return (
-    <div className={cx('blk', 'cls', current && 'is-now', className)} style={{ ...style, ...subjectVars(b.id) }} aria-current={current ? 'time' : undefined}>
-      <span className="code"><Sigil subject={b.id} size={11} tone="current" />{c.code}</span>
+    <div
+      className={cx('blk', 'cls', current && 'is-now', className)}
+      style={{ ...style, ...subjectVars(b.id) }}
+      aria-current={current ? 'time' : undefined}
+    >
+      <span className="code">
+        <Sigil subject={b.id} size={11} tone="current" />
+        {c.code}
+      </span>
       <span className="nm">{c.name}</span>
-      <small>{trim(b.start)}–{trim(b.end)}{b.teacher ? ' · ' + teacherShort(b.teacher) : ''}</small>
+      <small>
+        {trim(b.start)}–{trim(b.end)}
+        {b.teacher ? ' · ' + teacherShort(b.teacher) : ''}
+      </small>
     </div>
   )
 }
@@ -209,7 +314,10 @@ function NowLine({ now }) {
   return (
     <p className="nc-nowline" role="status" style={subjectVars(sid)}>
       {sid ? <Sigil subject={sid} size={12} /> : <Icon name="clock" size={18} />}
-      <span>{main}{['clase', 'libre', 'patio'].includes(st.state) && nextTxt ? <span className="na-muted"> · Después: {nextTxt}</span> : null}</span>
+      <span>
+        {main}
+        {['clase', 'libre', 'patio'].includes(st.state) && nextTxt ? <span className="na-muted"> · Después: {nextTxt}</span> : null}
+      </span>
     </p>
   )
 }
@@ -227,27 +335,40 @@ function Horario({ now, active }) {
           <div style={{ gridRow: 1, gridColumn: 1 }} />
           {DAYS.map(d => (
             <div key={d} role="columnheader" className={cx('hd', d === today && 'today')} style={{ gridRow: 1, gridColumn: d + 1 }}>
-              {DAY_SHORT[d]}<small>hasta {trim(dayEnd(d))}</small>
+              {DAY_SHORT[d]}
+              <small>hasta {trim(dayEnd(d))}</small>
             </div>
           ))}
           {SESSIONS.map((s, i) => (
-            <div key={i} className="tm" style={{ gridRow: row(i), gridColumn: 1 }}><b>{trim(s.start)}</b>{trim(s.end)}</div>
+            <div key={i} className="tm" style={{ gridRow: row(i), gridColumn: 1 }}>
+              <b>{trim(s.start)}</b>
+              {trim(s.end)}
+            </div>
           ))}
-          <div className="brkrow" style={{ gridRow: BREAK.after + 3, gridColumn: '1 / -1' }}>{BREAK.label} · {BREAK.start}–{BREAK.end}</div>
-          {DAYS.flatMap(d => blocksFor(d, { free: true }).map(b => (
-            <ClassBlock
-              key={d + '-' + b.from} block={b}
-              current={d === today && h >= toHours(b.start) && h < toHours(b.end)}
-              className={cx(d === today && 'is-today', b.id && !active[b.id] && 'is-dim')}
-              style={{ gridColumn: d + 1, gridRow: `${row(b.from)} / ${row(b.to) + 1}` }}
-            />
-          )))}
+          <div className="brkrow" style={{ gridRow: BREAK.after + 3, gridColumn: '1 / -1' }}>
+            {BREAK.label} · {BREAK.start}–{BREAK.end}
+          </div>
+          {DAYS.flatMap(d =>
+            blocksFor(d, { free: true }).map(b => (
+              <ClassBlock
+                key={d + '-' + b.from}
+                block={b}
+                current={d === today && h >= toHours(b.start) && h < toHours(b.end)}
+                className={cx(d === today && 'is-today', b.id && !active[b.id] && 'is-dim')}
+                style={{ gridColumn: d + 1, gridRow: `${row(b.from)} / ${row(b.to) + 1}` }}
+              />
+            )),
+          )}
         </div>
       </div>
       <section className="nc-hours" aria-labelledby="nc-hours-t">
         <div className="nc-hours-head">
-          <h2 id="nc-hours-t" className="na-t-eyebrow na-muted">Módulos y profesorado</h2>
-          <span className="na-num"><b>{totalHours()} h</b> a la semana</span>
+          <h2 id="nc-hours-t" className="na-t-eyebrow na-muted">
+            Módulos y profesorado
+          </h2>
+          <span className="na-num">
+            <b>{totalHours()} h</b> a la semana
+          </span>
         </div>
         <ul className="nc-hours-grid">
           {FILTER_ORDER.map(id => {
@@ -262,7 +383,9 @@ function Horario({ now, active }) {
                 <span className="nm">{c.name}</span>
                 <small>{teacherNames(id).join(' · ')}</small>
                 <span className="bar" role="img" aria-label={`${n} de ${totalHours()} horas semanales`}>
-                  {Array.from({ length: n }, (_, i) => <i key={i} />)}
+                  {Array.from({ length: n }, (_, i) => (
+                    <i key={i} />
+                  ))}
                 </span>
               </li>
             )
@@ -281,16 +404,27 @@ function Detail({ event: e, now, onClose }) {
   return (
     <aside className="nc-detail" style={subjectVars(e.subject)} aria-label="Detalle del evento">
       <div className="nc-dhead">
-        <Sigil subject={e.subject} variant="outline" tone="current" size={200} strokeWidth={1.6} className="na-hero-deco" style={{ width: 200, height: 200, right: -96, top: -84 }} />
+        <Sigil
+          subject={e.subject}
+          variant="outline"
+          tone="current"
+          size={200}
+          strokeWidth={1.6}
+          className="na-hero-deco"
+          style={{ width: 200, height: 200, right: -96, top: -84 }}
+        />
         <div className="row">
           <SubjectTag subject={e.subject} variant="oncolor" showName />
           <Button variant="ghost" icon="x" label="Cerrar detalle" className="close" onClick={onClose} />
         </div>
         <div style={{ position: 'relative' }}>
           <span className="na-t-eyebrow" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Icon name={exam ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />{exam ? 'Examen' : 'Entrega'}
+            <Icon name={exam ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />
+            {exam ? 'Examen' : 'Entrega'}
           </span>
-          <h2 className="na-t-display" style={{ fontSize: 34, marginTop: 8 }}>{e.title}</h2>
+          <h2 className="na-t-display" style={{ fontSize: 34, marginTop: 8 }}>
+            {e.title}
+          </h2>
         </div>
       </div>
       <div className="nc-dbody">
@@ -299,35 +433,68 @@ function Detail({ event: e, now, onClose }) {
           {e.done ? 'Hecha' : <b>{relative(now, e.date)}</b>}
         </div>
         <dl className="nc-facts">
-          <dt><Icon name="calendar" size={18} /></dt>
-          <dd>{longDate(e.date)} · {exam ? `${e.time} – ${e.end || ''}` : `hasta las ${e.time}`}</dd>
-          <dt><Icon name="pin" size={18} /></dt>
+          <dt>
+            <Icon name="calendar" size={18} />
+          </dt>
+          <dd>
+            {longDate(e.date)} · {exam ? `${e.time} – ${e.end || ''}` : `hasta las ${e.time}`}
+          </dd>
+          <dt>
+            <Icon name="pin" size={18} />
+          </dt>
           <dd>{exam ? `En clase de ${s.code}` : e.where || 'Moodle'}</dd>
-          {e.tema ? <><dt><Icon name="book" size={18} /></dt><dd>{e.tema}</dd></> : null}
+          {e.tema ? (
+            <>
+              <dt>
+                <Icon name="book" size={18} />
+              </dt>
+              <dd>{e.tema}</dd>
+            </>
+          ) : null}
         </dl>
         {e.topics?.length ? (
           <div>
-            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 10 }}>{exam ? 'Qué entra' : 'Qué hay que entregar'}</p>
-            <ol className="nc-topics">{e.topics.map((t, i) => <li key={i}><span className="n">{i + 1}</span>{t}</li>)}</ol>
+            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 10 }}>
+              {exam ? 'Qué entra' : 'Qué hay que entregar'}
+            </p>
+            <ol className="nc-topics">
+              {e.topics.map((t, i) => (
+                <li key={i}>
+                  <span className="n">{i + 1}</span>
+                  {t}
+                </li>
+              ))}
+            </ol>
           </div>
         ) : null}
         {related ? (
           <div>
-            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 4 }}>Duda relacionada</p>
+            <p className="na-t-eyebrow na-muted" style={{ marginBottom: 4 }}>
+              Duda relacionada
+            </p>
             <ListRow
-              to={'/dudas/' + related.id} className="nc-bleed" leading={<Icon name="help" size={22} />} title={related.title}
+              to={'/dudas/' + related.id}
+              className="nc-bleed"
+              leading={<Icon name="help" size={22} />}
+              title={related.title}
               meta={<StatusBadge status={related.status} answers={related.answers.length} />}
               trailing={<Icon name="chevron-right" size={18} />}
             />
           </div>
         ) : null}
         <div className="nc-actions">
-          {exam
-            ? <Button variant="primary" icon="notes" block href={href('/apuntes?s=' + e.subject)}>Ver apuntes de {s.code}</Button>
-            : <Button variant={e.done ? 'secondary' : 'primary'} icon="check" block onClick={() => setDone(e.id, !e.done)}>
+          {exam ? (
+            <Button variant="primary" icon="notes" block href={href('/apuntes?s=' + e.subject)}>
+              Ver apuntes de {s.code}
+            </Button>
+          ) : (
+            <Button variant={e.done ? 'secondary' : 'primary'} icon="check" block onClick={() => setDone(e.id, !e.done)}>
               {e.done ? 'Marcar como pendiente' : 'Marcar como hecha'}
-            </Button>}
-          <Button variant="secondary" icon="book" block href={href('/asignaturas/' + e.subject)}>Ir a {s.name}</Button>
+            </Button>
+          )}
+          <Button variant="secondary" icon="book" block href={href('/asignaturas/' + e.subject)}>
+            Ir a {s.name}
+          </Button>
         </div>
       </div>
     </aside>

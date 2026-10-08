@@ -24,19 +24,31 @@ export default function Asignaturas() {
             return (
               <a key={p.subject} href={href('/asignaturas/' + p.subject)} className="nc-cardlink">
                 <Card subject={p.subject} as="article" tab={`${s.code} · ${s.name.toUpperCase()}`}>
-                  <h2 className="na-t-title" style={{ marginBottom: 6 }}>{s.name}</h2>
+                  <h2 className="na-t-title" style={{ marginBottom: 6 }}>
+                    {s.name}
+                  </h2>
                   <p className="na-t-label na-muted nc-meta-line">
-                    <span><Icon name="user" size={15} />{teacherNames(p.subject).join(' y ')}</span>
-                    <span><Icon name="clock" size={15} />{weeklyHours(p.subject)} h a la semana</span>
+                    <span>
+                      <Icon name="user" size={15} />
+                      {teacherNames(p.subject).join(' y ')}
+                    </span>
+                    <span>
+                      <Icon name="clock" size={15} />
+                      {weeklyHours(p.subject)} h a la semana
+                    </span>
                   </p>
                   <div className="nc-subj-next">
-                    {p.next ? <>
-                      <span className="when">
-                        <Icon name={p.next.type === 'examen' ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />
-                        {(p.next.type === 'examen' ? 'Examen · ' : 'Próxima entrega · ') + shortDate(p.next.date)}
-                      </span>
-                      <span className="what">{p.next.title}</span>
-                    </> : <span className="when">Nada pendiente</span>}
+                    {p.next ? (
+                      <>
+                        <span className="when">
+                          <Icon name={p.next.type === 'examen' ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />
+                          {(p.next.type === 'examen' ? 'Examen · ' : 'Próxima entrega · ') + shortDate(p.next.date)}
+                        </span>
+                        <span className="what">{p.next.title}</span>
+                      </>
+                    ) : (
+                      <span className="when">Nada pendiente</span>
+                    )}
                   </div>
                   <ProgressSegments subject={p.subject} done={p.done} total={p.total} label="Hechas" />
                 </Card>

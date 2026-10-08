@@ -30,7 +30,14 @@ export function Button({ variant = 'primary', size, icon, iconRight, children, c
   const Tag = rest.href ? 'a' : 'button'
   const attrs = {
     ...rest,
-    className: cx('na-btn', `na-btn--${variant}`, size === 'lg' && 'na-btn--lg', iconOnly && 'na-btn--icon', block && 'na-btn--block', className),
+    className: cx(
+      'na-btn',
+      `na-btn--${variant}`,
+      size === 'lg' && 'na-btn--lg',
+      iconOnly && 'na-btn--icon',
+      block && 'na-btn--block',
+      className,
+    ),
     style: { ...subjectVars(subject), ...style },
   }
   if (iconOnly) attrs['aria-label'] = label
@@ -51,7 +58,12 @@ export function Tabs({ items = [], value, onChange, label, className }) {
         const sel = it.id === value
         return (
           <button
-            key={it.id} type="button" role="tab" className="na-tab" aria-selected={sel} tabIndex={sel ? 0 : -1}
+            key={it.id}
+            type="button"
+            role="tab"
+            className="na-tab"
+            aria-selected={sel}
+            tabIndex={sel ? 0 : -1}
             onClick={onChange ? () => onChange(it.id) : undefined}
           >
             {it.icon ? <Icon name={it.icon} size={18} /> : null}
@@ -69,11 +81,16 @@ export function DoneToggle({ done, subject, title = '', onChange, className }) {
   const on = !!done
   return (
     <button
-      type="button" className={cx('na-done', on && 'is-on', className)} style={subjectVars(subject)}
-      aria-pressed={on} aria-label={(on ? 'Hecha: ' : 'Marcar como hecha: ') + title}
+      type="button"
+      className={cx('na-done', on && 'is-on', className)}
+      style={subjectVars(subject)}
+      aria-pressed={on}
+      aria-label={(on ? 'Hecha: ' : 'Marcar como hecha: ') + title}
       onClick={onChange ? () => onChange(!on) : undefined}
     >
-      <span className="na-done-box"><Icon name="check" size={16} strokeWidth={3} /></span>
+      <span className="na-done-box">
+        <Icon name="check" size={16} strokeWidth={3} />
+      </span>
     </button>
   )
 }
@@ -89,11 +106,25 @@ export function VoteCounter({ count = 0, voted, static: isStatic, onUp, onDown, 
   }
   return (
     <div className={cx('na-vote', className)} role="group" aria-label="Votos">
-      <button type="button" className={cx('na-vote-btn', voted === 'up' && 'is-on')} aria-pressed={voted === 'up'} aria-label="Votar a favor" onClick={onUp}>
+      <button
+        type="button"
+        className={cx('na-vote-btn', voted === 'up' && 'is-on')}
+        aria-pressed={voted === 'up'}
+        aria-label="Votar a favor"
+        onClick={onUp}
+      >
         <Icon name="up" size={22} strokeWidth={2.4} />
       </button>
-      <span className="na-vote-num" aria-live="polite">{count}</span>
-      <button type="button" className={cx('na-vote-btn', voted === 'down' && 'is-on')} aria-pressed={voted === 'down'} aria-label="Votar en contra" onClick={onDown}>
+      <span className="na-vote-num" aria-live="polite">
+        {count}
+      </span>
+      <button
+        type="button"
+        className={cx('na-vote-btn', voted === 'down' && 'is-on')}
+        aria-pressed={voted === 'down'}
+        aria-label="Votar en contra"
+        onClick={onDown}
+      >
         <Icon name="down" size={22} strokeWidth={2.4} />
       </button>
     </div>

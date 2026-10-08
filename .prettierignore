@@ -1,0 +1,5 @@
+dist
+node_modules
+package-lock.json
+# Los CSS van compactos a propósito: una regla por línea
+src/styles/*.css

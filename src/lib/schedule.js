@@ -49,7 +49,9 @@ export function blocksFor(day, { free = false } = {}) {
 }
 
 export function weeklyHours(id) {
-  return Object.values(SCHEDULE).flat().filter(x => x && x.id === id).length
+  return Object.values(SCHEDULE)
+    .flat()
+    .filter(x => x && x.id === id).length
 }
 
 export function totalHours() {
