@@ -40,6 +40,9 @@ export default function App() {
   usePlanKey(path)
   return (
     <div className="nc-app">
+      <button type="button" className="nc-skip" onClick={skipToMain}>
+        Saltar al contenido
+      </button>
       <TopBar active={section} className="nc-only-desktop" />
       <AppBar className="nc-only-mobile" />
       <Page {...params} key={path} />
@@ -74,4 +77,12 @@ function usePlanKey(path) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [path, planClosed])
+}
+
+/* «Saltar al contenido»: con rutas por hash no sirve un enlace #main, así que se enfoca el <main> a mano */
+function skipToMain() {
+  const main = document.querySelector('main')
+  if (!main) return
+  main.setAttribute('tabindex', '-1')
+  main.focus()
 }

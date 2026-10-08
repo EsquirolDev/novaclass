@@ -69,6 +69,7 @@ export default function Apuntes() {
                 const s = SUBJECTS[g.subject]
                 return (
                   <Card key={g.subject} subject={g.subject} as="section" tab={`${s.code} · ${s.name.toUpperCase()}`}>
+                    <h2 className="na-sr">{s.name}</h2>
                     {g.temas.map(t => (
                       <div key={t.title} className="nc-tema">
                         <h3>

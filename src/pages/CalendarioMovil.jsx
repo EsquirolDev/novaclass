@@ -109,7 +109,8 @@ export default function CalendarioMovil() {
   const week = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(focusDate), i))
 
   return (
-    <div className="nc-screen nc-mcal">
+    <main className="nc-screen nc-mcal">
+      <h1 className="na-sr">Calendario</h1>
       <div className="nc-mtop">
         <Tabs
           label="Vista"
@@ -257,7 +258,7 @@ export default function CalendarioMovil() {
           </div>
         </Sheet>
       ) : null}
-    </div>
+    </main>
   )
 }
 

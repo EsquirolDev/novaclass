@@ -205,9 +205,9 @@
 .nc-sub{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .nc-q{display:grid;grid-template-columns:56px 76px minmax(0,1fr);gap:16px;padding:18px 20px 18px 14px;align-items:start}
 .nc-q+.nc-q{border-top:1px solid var(--line)}
-.nc-q h3{margin:0 0 6px;font:700 18px/1.3 var(--font-text)}
-.nc-q h3 a{text-decoration:none}
-.nc-q h3 a:hover{text-decoration:underline;text-underline-offset:3px}
+.nc-q h2{margin:0 0 6px;font:700 18px/1.3 var(--font-text)}
+.nc-q h2 a{text-decoration:none}
+.nc-q h2 a:hover{text-decoration:underline;text-underline-offset:3px}
 .nc-q p{margin:0 0 12px;font:400 14px/1.5 var(--font-text);color:var(--ink-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nc-q .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .nc-q .by{margin-left:auto;display:flex;align-items:center;gap:8px;font:500 13px/1 var(--font-text);color:var(--ink-muted)}
@@ -431,3 +431,9 @@ textarea::placeholder,.nc-input::placeholder{color:var(--ink-muted)}
   .na-tabs:has(.na-pill-count) .na-tab .na-icon{display:none}
   .na-tab{flex:1 0 auto;justify-content:center;gap:6px;padding:0 10px;font-size:13px}
 }
+
+/* Accesibilidad: enlace para saltar la navegación (visible solo con foco) y main enfocado sin anillo */
+.nc-skip{position:fixed;top:8px;left:8px;z-index:100;padding:12px 18px;border:0;border-radius:var(--radius-pill);background:var(--ink);color:var(--bg);font:700 15px/1 var(--font-text);transform:translateY(-200%);cursor:pointer}
+.nc-skip:focus-visible{transform:none}
+main:focus{outline:none}
+.nc-detail h2:focus{outline:none}

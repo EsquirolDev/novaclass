@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Icon, ListRow, Sigil, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
 import { BREAK } from '../data/seed.js'
 import { SUBJECTS, subjectVars } from '../data/subjects.js'
@@ -45,11 +45,16 @@ export function AgendaRow({ e, now, sel, onSel }) {
 }
 
 /* Una clase del horario: sigilo + código, nombre, horas y profe. Los módulos sin asignatura van en neutro. */
-export function ClassBlock({ block: b, style, className, current }) {
+export function ClassBlock({ block: b, style, className, current, day }) {
+  /* En la rejilla de escritorio el día solo está en la cabecera: se repite oculto para el lector de pantalla */
+  const sr = day ? <span className="na-sr">{day}, </span> : null
   if (!b.id) {
     return (
       <div className={cx('blk', 'free', className)} style={style}>
-        <span>Libre</span>
+        <span>
+          {sr}
+          Libre {trim(b.start)}–{trim(b.end)}
+        </span>
       </div>
     )
   }
@@ -60,6 +65,7 @@ export function ClassBlock({ block: b, style, className, current }) {
       style={{ ...style, ...subjectVars(b.id) }}
       aria-current={current ? 'time' : undefined}
     >
+      {sr}
       <span className="code">
         <Sigil subject={b.id} size={11} tone="current" />
         {c.code}
@@ -97,8 +103,13 @@ export function NowLine({ now }) {
   )
 }
 
-export function Detail({ event: e, now, onClose }) {
+/* `focusTitle`: al abrirlo con el teclado, el foco salta al título para no tener que recorrer todo el mes */
+export function Detail({ event: e, now, onClose, focusTitle }) {
   const { dudas, setDone } = useStore()
+  const title = useRef(null)
+  useEffect(() => {
+    if (focusTitle) title.current?.focus()
+  }, [e.id, focusTitle])
   const s = SUBJECTS[e.subject]
   const exam = e.type === 'examen'
   const related = e.related ? dudas.find(d => d.id === e.related) : null
@@ -123,7 +134,7 @@ export function Detail({ event: e, now, onClose }) {
             <Icon name={exam ? 'flag' : 'inbox'} size={15} strokeWidth={2.4} />
             {exam ? 'Examen' : 'Entrega'}
           </span>
-          <h2 className="na-t-display" style={{ fontSize: 34, marginTop: 8 }}>
+          <h2 ref={title} tabIndex={-1} className="na-t-display" style={{ fontSize: 34, marginTop: 8 }}>
             {e.title}
           </h2>
         </div>
@@ -204,19 +215,40 @@ export function Detail({ event: e, now, onClose }) {
 
 /* Hoja inferior para el detalle en móvil: fondo que cierra al tocarlo, Esc también, y la página no se desplaza detrás */
 export function Sheet({ onClose, label = 'Detalle del evento', children }) {
+  const box = useRef(null)
+  const close = useRef(onClose)
+  close.current = onClose
+  /* Al abrir, el foco entra en la hoja y no sale con Tab; al cerrar vuelve a lo que la abrió */
   useEffect(() => {
-    const onKey = e => e.key === 'Escape' && onClose()
+    const back = document.activeElement
+    const focusables = () => [...box.current.querySelectorAll('button, a[href], input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+    const first = focusables().find(el => !el.classList.contains('nc-sheet-bg'))
+    first?.focus()
+    function onKey(e) {
+      if (e.key === 'Escape') close.current()
+      if (e.key !== 'Tab') return
+      const els = focusables().filter(el => !el.classList.contains('nc-sheet-bg'))
+      const i = els.indexOf(document.activeElement)
+      if (e.shiftKey && i <= 0) {
+        e.preventDefault()
+        els[els.length - 1].focus()
+      } else if (!e.shiftKey && i === els.length - 1) {
+        e.preventDefault()
+        els[0].focus()
+      }
+    }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = prev
       window.removeEventListener('keydown', onKey)
+      back?.focus?.()
     }
-  }, [onClose])
+  }, [])
   return (
-    <div className="nc-sheet" role="dialog" aria-modal="true" aria-label={label}>
-      <button type="button" className="nc-sheet-bg" aria-label="Cerrar" onClick={onClose} />
+    <div className="nc-sheet" role="dialog" aria-modal="true" aria-label={label} ref={box}>
+      <button type="button" className="nc-sheet-bg" aria-label="Cerrar" tabIndex={-1} onClick={onClose} />
       <div className="nc-sheet-body">{children}</div>
     </div>
   )

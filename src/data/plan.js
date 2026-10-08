@@ -32,6 +32,7 @@ export const PLAN = [
         id: 'a11y',
         title: 'Accesibilidad con teclado y lector de pantalla',
         detail: 'Orden del foco, nombres de botones, el panel de detalle del calendario y los formularios de dudas y apuntes.',
+        done: true,
       },
       {
         id: 'vacios',

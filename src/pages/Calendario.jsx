@@ -1,11 +1,23 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button, EventChip, Icon, Pill, Sigil, SubjectTag, Tabs } from '../components/index.js'
 import { BREAK, SESSIONS } from '../data/seed.js'
 import { allModulesOn, MODULE_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { addDays, DOWS, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, sameDay, startOfWeek } from '../lib/dates.js'
 import { useIsMobile } from '../lib/useMedia.js'
-import { blocksFor, classInfo, DAY_SHORT, DAYS, dayEnd, teacherNames, toHours, totalHours, trim, weeklyHours } from '../lib/schedule.js'
+import {
+  blocksFor,
+  classInfo,
+  DAY_NAMES,
+  DAY_SHORT,
+  DAYS,
+  dayEnd,
+  teacherNames,
+  toHours,
+  totalHours,
+  trim,
+  weeklyHours,
+} from '../lib/schedule.js'
 import { chip } from '../state/selectors.js'
 import { useStore } from '../state/store.jsx'
 import CalendarioMovil from './CalendarioMovil.jsx'
@@ -37,6 +49,18 @@ function CalendarioEscritorio() {
     const first = events.find(e => e.type !== 'festivo' && !e.done && e.at >= day) || null
     return first && first.id
   })
+  /* Lo que abrió el detalle, para devolverle el foco al cerrarlo */
+  const trigger = useRef(null)
+  const [focusDetail, setFocusDetail] = useState(false)
+  function select(e) {
+    trigger.current = document.activeElement
+    setSelId(e.id)
+    setFocusDetail(true)
+  }
+  function closeDetail() {
+    setSelId(null)
+    trigger.current?.focus()
+  }
   const horario = view === 'horario'
   const sel = horario ? null : events.find(e => e.id === selId) || null
   const all = MODULE_ORDER.every(k => active[k])
@@ -122,14 +146,14 @@ function CalendarioEscritorio() {
           ) : (
             <div className="nc-scroll-x">
               {view === 'mes' ? (
-                <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+                <MonthGrid refDate={ref} now={now} events={visible} sel={sel} onSel={select} />
               ) : (
-                <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={e => setSelId(e.id)} />
+                <WeekAgenda monday={mon} now={now} events={visible} sel={sel} onSel={select} />
               )}
             </div>
           )}
         </main>
-        {sel ? <Detail event={sel} now={now} onClose={() => setSelId(null)} /> : null}
+        {sel ? <Detail event={sel} now={now} onClose={closeDetail} focusTitle={focusDetail} /> : null}
       </div>
     </div>
   )
@@ -142,7 +166,7 @@ function MonthGrid({ refDate, now, events, sel, onSel }) {
   const weeks = Math.ceil((((first.getDay() + 6) % 7) + last.getDate()) / 7)
   const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i))
   return (
-    <div className="nc-month" role="grid" aria-label={monthTitle(refDate)}>
+    <div className="nc-month" role="group" aria-label={monthTitle(refDate)}>
       {DOWS.map(d => (
         <div key={d} className="nc-dow">
           {d}
@@ -193,7 +217,7 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
         const blocks = i < 5 ? blocksFor(i + 1) : []
         const hours = holiday ? 'Festivo' : blocks.length ? `Clase de ${trim(blocks[0].start)} a ${trim(dayEnd(i + 1))}` : 'Sin clase'
         return (
-          <section
+          <div
             key={iso}
             role="listitem"
             className={cx('nc-aday', today && 'today', (i >= 5 || holiday) && 'off')}
@@ -212,7 +236,7 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
                 <span className="empty">{i >= 5 || holiday ? 'Libre' : 'Nada que entregar'}</span>
               )}
             </div>
-          </section>
+          </div>
         )
       })}
     </div>
@@ -228,10 +252,10 @@ function Horario({ now, active }) {
     <div className="nc-horario-wrap">
       <NowLine now={now} />
       <div className="nc-scroll-x">
-        <div className="nc-horario" role="table" aria-label="Horario semanal de DAW 26/27">
+        <div className="nc-horario" role="group" aria-label="Horario semanal de DAW 26/27">
           <div style={{ gridRow: 1, gridColumn: 1 }} />
           {DAYS.map(d => (
-            <div key={d} role="columnheader" className={cx('hd', d === today && 'today')} style={{ gridRow: 1, gridColumn: d + 1 }}>
+            <div key={d} aria-hidden="true" className={cx('hd', d === today && 'today')} style={{ gridRow: 1, gridColumn: d + 1 }}>
               {DAY_SHORT[d]}
               <small>hasta {trim(dayEnd(d))}</small>
             </div>
@@ -250,6 +274,7 @@ function Horario({ now, active }) {
               <ClassBlock
                 key={d + '-' + b.from}
                 block={b}
+                day={DAY_NAMES[d]}
                 current={d === today && h >= toHours(b.start) && h < toHours(b.end)}
                 className={cx(d === today && 'is-today', b.id && !active[b.id] && 'is-dim')}
                 style={{ gridColumn: d + 1, gridRow: `${row(b.from)} / ${row(b.to) + 1}` }}

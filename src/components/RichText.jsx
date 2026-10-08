@@ -15,7 +15,8 @@ const SQL = /\b(SELECT|FROM|LEFT JOIN|INNER JOIN|ON|WHERE|IS NULL|NOT EXISTS|GRO
 /* Bloque de código con palabras clave SQL resaltadas en el color de la asignatura */
 export function CodeBlock({ code }) {
   return (
-    <pre className="nc-pre">
+    /* Enfocable: si el código no cabe, con teclado se desplaza con las flechas */
+    <pre className="nc-pre" tabIndex={0} aria-label="Código">
       <code>
         {code.split('\n').map((line, i) => (
           <span key={i} style={{ display: 'block' }}>

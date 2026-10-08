@@ -105,9 +105,9 @@ export default function Dudas() {
                       {n === 1 ? 'respuesta' : 'respuestas'}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <h3>
+                      <h2>
                         <a href={href('/dudas/' + d.id)}>{d.title}</a>
-                      </h3>
+                      </h2>
                       {d.body ? <p>{d.body.replace(/`/g, '')}</p> : null}
                       <div className="meta">
                         <SubjectTag subject={d.subject} />

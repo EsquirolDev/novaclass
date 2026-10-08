@@ -40,7 +40,7 @@ export default function Asignatura({ id }) {
 
   return (
     <div className="nc-screen">
-      <div className="nc-pad">
+      <main className="nc-pad">
         <nav className="nc-crumb" aria-label="Ruta">
           <a href={href('/asignaturas')}>
             <Icon name="chevron-left" size={18} />
@@ -308,7 +308,7 @@ export default function Asignatura({ id }) {
             </Card>
           </aside>
         </div>
-      </div>
+      </main>
     </div>
   )
 }
