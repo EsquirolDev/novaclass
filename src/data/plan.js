@@ -74,9 +74,22 @@ export const PLAN = [
         done: true,
       },
       {
+        id: 'escuelas',
+        title: 'Escuelas, clases y cargos en el modelo',
+        detail:
+          'Escuelas (verificadas o no) con dirección, varias clases por persona, profesorado con tutor/a y alumnado con delegado/a y subdelegado/a. Plan en docs/escuelas.md.',
+      },
+      {
         id: 'seed',
         title: 'Pasar seed.js a la base de datos',
-        detail: 'Horario real de 1.º DAW, módulos, profes y eventos como migración de arranque de PocketBase.',
+        detail:
+          'Sant Josep Obrer (verificada) con 1.º DAW A: horario real, módulos, profesorado, temas y eventos como migración de arranque.',
+      },
+      {
+        id: 'pruebas',
+        title: 'Gente de prueba',
+        detail:
+          'Script aparte con dirección, tutor/a, profes, delegado/a, subdelegado/a, alumnado con los tres tratos y alguien de otra escuela.',
       },
       {
         id: 'store',
@@ -88,8 +101,8 @@ export const PLAN = [
   },
   {
     id: 'cuentas',
-    title: 'Cuentas y grupo de clase',
-    goal: 'Que cada persona entre con su cuenta y vea lo de su grupo.',
+    title: 'Cuentas, escuelas y clases',
+    goal: 'Que cada persona entre con su cuenta y vea lo de su escuela y su clase.',
     tasks: [
       {
         id: 'login',
@@ -98,13 +111,19 @@ export const PLAN = [
       },
       {
         id: 'grupo',
-        title: 'Unirse a un grupo con código',
-        detail: 'Un grupo = una clase (1.º DAW A). Todo lo que se ve se filtra por grupo.',
+        title: 'Unirse a una clase con código',
+        detail: 'Con el código de la clase o añadida por dirección o tutor/a. Selector de clase si estás en más de una.',
       },
       {
         id: 'roles',
-        title: 'Roles: alumno, delegado y profe',
-        detail: 'Quién puede crear o editar entregas, exámenes y el horario; el resto solo los marca como hechos.',
+        title: 'Gestión de la clase: miembros y cargos',
+        detail:
+          'Pantallas para que dirección y tutor/a añadan gente y nombren tutor/a, delegado/a y subdelegado/a; cargos con su trato (m, f, neutro).',
+      },
+      {
+        id: 'escuela',
+        title: 'Crear escuela y verificación',
+        detail: 'Cualquiera crea su escuela y queda como director/a; la administración la marca como verificada.',
       },
       { id: 'perfil', title: 'Perfil y ajustes', detail: 'Nombre, avatar, tema claro u oscuro y qué avisos quiere recibir.' },
     ],
