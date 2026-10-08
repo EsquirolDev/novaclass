@@ -218,8 +218,6 @@
 .nc-stat.ans.res{background:var(--accent);color:var(--on-accent);box-shadow:none}
 .nc-stat.ans.res b{color:var(--on-accent)}
 .nc-stat.ans.none{box-shadow:none;border:1.5px dashed var(--line-strong)}
-.nc-ask label{display:block;font:700 13px/1 var(--font-text);margin:0 0 8px}
-.nc-ask-subjects{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
 textarea,.nc-input{width:100%;border-radius:16px;border:1.5px solid var(--line-strong);background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--font-text);padding:12px 14px}
 textarea{min-height:96px;resize:vertical}
 .nc-input{min-height:48px;padding:0 14px}
@@ -229,12 +227,9 @@ textarea::placeholder,.nc-input::placeholder{color:var(--ink-muted)}
 .nc-stats b{display:block;font:800 32px/1 var(--font-display);color:var(--ink);margin-bottom:6px}
 .na-btn:disabled{opacity:.5;cursor:not-allowed}
 
-/* Preguntas: rápida (una línea) y general (formulario completo) */
-.nc-kw--quick{gap:5px;background:transparent;box-shadow:inset 0 0 0 1.5px var(--line-strong);color:var(--ink-muted)}
-.nc-ask-hint{margin:0 0 14px}
+/* Formulario de pregunta */
 .nc-inline-link{color:var(--accent);font-weight:700;text-underline-offset:3px}
 .nc-count{display:block;margin-top:6px;text-align:right;font:600 12px/1 var(--font-text);color:var(--ink-muted)}
-.nc-sent{display:flex;align-items:center;gap:6px;margin:12px 0 0;color:var(--accent)}
 .nc-form{display:flex;flex-direction:column;gap:6px;padding:var(--space-5)}
 .nc-form .nc-field{margin-top:18px}
 .nc-form .nc-field:first-child{margin-top:0}
@@ -437,3 +432,33 @@ textarea::placeholder,.nc-input::placeholder{color:var(--ink-muted)}
 .nc-skip:focus-visible{transform:none}
 main:focus{outline:none}
 .nc-detail h2:focus{outline:none}
+
+/* ---------- Estados: vacío, error, cargando, sin conexión ---------- */
+.nc-state{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 24px;text-align:center}
+.nc-state-icon{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:var(--surface-2);color:var(--ink-muted)}
+.nc-state-text{display:flex;flex-direction:column;gap:6px;max-width:420px}
+.nc-state .t{margin:0;font:700 18px/1.3 var(--font-text);color:var(--ink)}
+.nc-state .d{margin:0;font:500 14px/1.45 var(--font-text);color:var(--ink-muted)}
+.nc-state-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px}
+.nc-state.is-compact{flex-direction:row;align-items:center;gap:14px;padding:14px 4px;text-align:left}
+.nc-state.is-compact .nc-state-icon{width:40px;height:40px;flex:none}
+.nc-state.is-compact .nc-state-text{flex:1;min-width:0}
+.nc-state.is-compact .t{font-size:15px}
+.nc-state.is-compact .d{font-size:13px}
+.nc-state.is-compact .nc-state-actions{margin:0}
+.nc-state.is-error .nc-state-icon{background:var(--ink);color:var(--bg)}
+.nc-state-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl)}
+.nc-state-page{padding-top:48px}
+.nc-state-page .nc-state{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);max-width:640px;margin:0 auto}
+@media (max-width:640px){.nc-state.is-compact{flex-wrap:wrap}.nc-state.is-compact .nc-state-actions{width:100%;padding-left:54px}}
+.nc-skel{display:flex;flex-direction:column;gap:14px;max-width:var(--content-max);margin:0 auto;padding:24px var(--space-6);opacity:0;transition:opacity .2s}
+.nc-skel.is-on{opacity:1}
+.nc-skel .b{display:block;border-radius:var(--radius-md);background:var(--surface-2);animation:nc-pulse 1.4s ease-in-out infinite}
+.nc-skel .h1{width:min(360px,70%);height:48px}
+.nc-skel .sub{width:min(520px,90%);height:18px;margin-bottom:12px}
+.nc-skel .card{height:120px;border-radius:var(--radius-xl)}
+@keyframes nc-pulse{50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){.nc-skel .b{animation:none}}
+@media (max-width:860px){.nc-skel{padding:16px var(--space-4)}}
+.nc-offline{position:sticky;top:var(--header-h);z-index:19;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--ink);color:var(--bg);font:600 14px/1.3 var(--font-text);text-align:center}
+@media (max-width:860px){.nc-offline{top:64px}}

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Avatar, Button, Card, FileBadge, Icon, ListRow, Pill, SubjectTag, Tabs } from '../components/index.js'
+import { Avatar, Button, Card, EmptyState, FileBadge, Icon, ListRow, Pill, SubjectTag, Tabs } from '../components/index.js'
 import { TEMAS } from '../data/seed.js'
 import { SUBJECTS, SUBJECT_ORDER } from '../data/subjects.js'
 import { useStore } from '../state/store.jsx'
@@ -123,7 +123,25 @@ export default function Apuntes() {
                 )
               })
             ) : (
-              <p className="nc-empty">No hay apuntes con estos filtros.</p>
+              <EmptyState
+                icon="notes"
+                title={apuntes.length ? 'No hay apuntes con estos filtros' : 'Todavía no hay apuntes'}
+                action={
+                  apuntes.length ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSubj(null)
+                        setType(null)
+                      }}
+                    >
+                      Quitar filtros
+                    </Button>
+                  ) : null
+                }
+              >
+                {apuntes.length ? 'Prueba con otra asignatura u otro tipo.' : 'Sube los tuyos con el formulario de la derecha.'}
+              </EmptyState>
             )}
           </div>
         </main>

@@ -106,11 +106,10 @@ export function StoreProvider({ children }) {
       setDone: (id, done) => update(s => ({ done: { ...s.done, [id]: done } })),
       /* key: id de duda, o «idDuda:idRespuesta» */
       vote: (key, dir) => update(s => ({ votes: { ...s.votes, [key]: s.votes[key] === dir ? null : dir } })),
-      /* kind: 'rapida' (una línea) o 'general' (con explicación, código y etiquetas) */
-      addDuda: ({ kind = 'general', subject, title, body = '', code = '', tags = [] }) => {
+      addDuda: ({ subject, title, body = '', code = '', tags = [] }) => {
         const id = Date.now()
         update(s => ({
-          dudas: [{ id, kind, subject, title, body, code, votes: 0, author: USER, when: 'ahora', views: 0, tags, answers: [] }, ...s.dudas],
+          dudas: [{ id, subject, title, body, code, votes: 0, author: USER, when: 'ahora', views: 0, tags, answers: [] }, ...s.dudas],
         }))
         return id
       },

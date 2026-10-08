@@ -1,4 +1,4 @@
-import { Button, Card, Countdown, Hero, Icon, ListRow, SectionTitle, Sigil, SubjectTag } from '../components/index.js'
+import { Button, Countdown, EmptyState, Hero, Icon, ListRow, SectionTitle, Sigil, SubjectTag } from '../components/index.js'
 import { SUBJECTS } from '../data/subjects.js'
 import { countdown, mediumDate, relative, shortDate, todayLong, todayShort } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
@@ -34,9 +34,18 @@ export default function Inicio() {
         {next ? (
           <NextHero event={next} now={now} onDone={() => setDone(next.id, true)} />
         ) : (
-          <Card>
-            <p className="na-t-subtitle">No tienes nada pendiente. Disfruta.</p>
-          </Card>
+          <EmptyState
+            icon="check"
+            title="Lo tienes todo al día"
+            className="nc-state-card"
+            action={
+              <Button variant="secondary" icon="calendar" href={href('/calendario')}>
+                Ver calendario
+              </Button>
+            }
+          >
+            No tienes entregas ni exámenes pendientes. Cuando haya algo nuevo, saldrá aquí.
+          </EmptyState>
         )}
 
         {after.length ? (

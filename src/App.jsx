@@ -1,18 +1,20 @@
-import { useEffect, useRef } from 'react'
-import { AppBar, BottomNav, TopBar } from './components/index.js'
-import { match, navigate, useRoute } from './lib/router.jsx'
-import Apuntes from './pages/Apuntes.jsx'
-import Asignatura from './pages/Asignatura.jsx'
-import Asignaturas from './pages/Asignaturas.jsx'
-import Calendario from './pages/Calendario.jsx'
-import Duda from './pages/Duda.jsx'
-import DudaNueva from './pages/DudaNueva.jsx'
-import Dudas from './pages/Dudas.jsx'
-import Inicio from './pages/Inicio.jsx'
-import Mejoras from './pages/Mejoras.jsx'
-import NoEncontrada from './pages/NoEncontrada.jsx'
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { AppBar, BottomNav, ErrorBoundary, LoadingState, OfflineBanner, TopBar } from './components/index.js'
 import { planFinished } from './data/plan.js'
+import { match, navigate, useRoute } from './lib/router.jsx'
+import Inicio from './pages/Inicio.jsx'
+import NoEncontrada from './pages/NoEncontrada.jsx'
 import { useStore } from './state/store.jsx'
+
+/* Inicio va en el paquete principal; el resto de pantallas se cargan al entrar (mientras, se ve el esqueleto) */
+const Apuntes = lazy(() => import('./pages/Apuntes.jsx'))
+const Asignatura = lazy(() => import('./pages/Asignatura.jsx'))
+const Asignaturas = lazy(() => import('./pages/Asignaturas.jsx'))
+const Calendario = lazy(() => import('./pages/Calendario.jsx'))
+const Duda = lazy(() => import('./pages/Duda.jsx'))
+const DudaNueva = lazy(() => import('./pages/DudaNueva.jsx'))
+const Dudas = lazy(() => import('./pages/Dudas.jsx'))
+const Mejoras = lazy(() => import('./pages/Mejoras.jsx'))
 
 const ROUTES = [
   ['/', 'inicio', Inicio],
@@ -45,7 +47,12 @@ export default function App() {
       </button>
       <TopBar active={section} className="nc-only-desktop" />
       <AppBar className="nc-only-mobile" />
-      <Page {...params} key={path} />
+      <OfflineBanner />
+      <ErrorBoundary resetKey={path}>
+        <Suspense fallback={<LoadingState />}>
+          <Page {...params} key={path} />
+        </Suspense>
+      </ErrorBoundary>
       <div className="nc-bottomnav nc-only-mobile">
         <BottomNav active={section === 'asignaturas' ? null : section} />
       </div>

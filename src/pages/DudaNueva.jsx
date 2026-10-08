@@ -20,7 +20,7 @@ function words(text) {
   )
 }
 
-/* Pregunta general: con explicación, código y etiquetas. La rápida está en la lista de Dudas. */
+/* Nueva pregunta: título, explicación, código y etiquetas */
 export default function DudaNueva() {
   const { dudas, addDuda } = useStore()
   const [subject, setSubject] = useState(null)
@@ -60,7 +60,7 @@ export default function DudaNueva() {
     e.preventDefault()
     setTried(true)
     if (!valid) return
-    const id = addDuda({ kind: 'general', subject, title: title.trim(), body: body.trim(), code: code.replace(/\s+$/, ''), tags: tagList })
+    const id = addDuda({ subject, title: title.trim(), body: body.trim(), code: code.replace(/\s+$/, ''), tags: tagList })
     navigate('/dudas/' + id)
   }
 
@@ -229,13 +229,6 @@ export default function DudaNueva() {
                 <p>El código justo para reproducirlo, no la práctica entera.</p>
               </li>
             </ol>
-            <p className="na-t-label na-muted" style={{ marginTop: 16 }}>
-              ¿Es algo de una línea, como una fecha o un aula? Usa la{' '}
-              <a className="nc-inline-link" href={href('/dudas')}>
-                pregunta rápida
-              </a>
-              .
-            </p>
           </Card>
         </aside>
       </div>

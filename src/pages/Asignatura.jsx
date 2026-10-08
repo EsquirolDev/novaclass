@@ -5,6 +5,7 @@ import {
   Card,
   Countdown,
   DoneToggle,
+  EmptyState,
   FileBadge,
   Hero,
   Icon,
@@ -156,7 +157,9 @@ export default function Asignatura({ id }) {
                         )
                       })
                     ) : (
-                      <p className="nc-empty">No te queda nada pendiente en {s.code}.</p>
+                      <EmptyState compact icon="check" title={`Nada pendiente en ${s.code}`}>
+                        Cuando el profe ponga una entrega nueva, saldrá aquí.
+                      </EmptyState>
                     )}
                   </div>
                 </section>
@@ -192,7 +195,9 @@ export default function Asignatura({ id }) {
                         </div>
                       ))
                     ) : (
-                      <p className="nc-empty">Todavía no has marcado ninguna como hecha.</p>
+                      <EmptyState compact icon="inbox" title="Aún no has marcado ninguna como hecha">
+                        Al entregar, márcala con el círculo y bajará aquí.
+                      </EmptyState>
                     )}
                   </div>
                 </section>
@@ -220,7 +225,16 @@ export default function Asignatura({ id }) {
                       />
                     ))
                   ) : (
-                    <p className="nc-empty">Aún no hay apuntes de {s.code}.</p>
+                    <EmptyState
+                      compact
+                      icon="notes"
+                      title={`Aún no hay apuntes de ${s.code}`}
+                      action={
+                        <Button variant="secondary" icon="upload" href={href('/apuntes?s=' + id)}>
+                          Subir apuntes
+                        </Button>
+                      }
+                    />
                   )}
                 </div>
               </div>
@@ -243,7 +257,16 @@ export default function Asignatura({ id }) {
                       />
                     ))
                   ) : (
-                    <p className="nc-empty">Nadie ha preguntado nada de {s.code} todavía.</p>
+                    <EmptyState
+                      compact
+                      icon="help"
+                      title={`Nadie ha preguntado nada de ${s.code}`}
+                      action={
+                        <Button variant="secondary" icon="plus" href={href('/dudas/nueva')}>
+                          Preguntar
+                        </Button>
+                      }
+                    />
                   )}
                 </div>
               </div>

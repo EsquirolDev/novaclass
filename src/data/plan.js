@@ -38,6 +38,7 @@ export const PLAN = [
         id: 'vacios',
         title: 'Estados vacíos, de carga y de error',
         detail: 'Qué se ve sin entregas, sin dudas, sin conexión o mientras carga. Hoy todo da por hecho que hay datos.',
+        done: true,
       },
       {
         id: 'tests',

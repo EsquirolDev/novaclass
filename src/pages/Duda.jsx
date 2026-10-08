@@ -1,5 +1,17 @@
 import { useState } from 'react'
-import { Avatar, Button, Card, FileBadge, Icon, ListRow, StatusBadge, SubjectTag, Tabs, VoteCounter } from '../components/index.js'
+import {
+  Avatar,
+  Button,
+  Card,
+  EmptyState,
+  FileBadge,
+  Icon,
+  ListRow,
+  StatusBadge,
+  SubjectTag,
+  Tabs,
+  VoteCounter,
+} from '../components/index.js'
 import { CodeBlock, Paragraphs } from '../components/RichText.jsx'
 import { subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
@@ -64,12 +76,6 @@ export default function Duda({ id }) {
             <div className="tags">
               <SubjectTag subject={d.subject} variant="solid" showName />
               <StatusBadge status={d.status} answers={d.answers.length} />
-              {d.kind === 'rapida' ? (
-                <span className="nc-kw nc-kw--quick">
-                  <Icon name="message" size={13} strokeWidth={2.4} />
-                  Pregunta rápida
-                </span>
-              ) : null}
               <span className="na-t-label na-muted">
                 Preguntada {d.when} · {d.views} visitas
               </span>
@@ -136,7 +142,11 @@ export default function Duda({ id }) {
                 </article>
               )
             })}
-            {!d.answers.length ? <p className="nc-empty">Nadie ha respondido todavía. ¿Te animas?</p> : null}
+            {!d.answers.length ? (
+              <EmptyState compact icon="message" title="Nadie ha respondido todavía">
+                Si sabes la respuesta, escríbela abajo. Explicarlo también te ayuda a ti.
+              </EmptyState>
+            ) : null}
           </div>
 
           <form className="na-card nc-reply" onSubmit={send}>
