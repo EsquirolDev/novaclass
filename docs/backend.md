@@ -15,7 +15,7 @@ backend/bin/pocketbase serve $P
 
 El panel queda en http://127.0.0.1:8090/_/. Ni `backend/bin/` ni `backend/pb_data/` van al repo.
 
-El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
+El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El panel de administración (`/_/`) no se reenvía nunca: solo se abre desde el propio servidor, en `http://127.0.0.1:8090/_/`. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
 
 ## Cuentas
 
