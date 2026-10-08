@@ -1,6 +1,6 @@
 # Backend de NovaClass
 
-> **Cambio en camino:** escuelas, varias clases por persona y cargos (tutor/a, delegado/a, subdelegado/a, dirección). Ver [`escuelas.md`](escuelas.md). Lo de abajo describe la primera migración.
+> **Cambio en camino:** escuelas, varias clases por persona y cargos (Tutor, Delegado, Subdelegado, Director). Ver [`escuelas.md`](escuelas.md). Lo de abajo describe la primera migración.
 
 PocketBase 0.40, que en un solo programa trae la base de datos SQLite, el inicio de sesión, la subida de archivos, el tiempo real y un panel de administración. En el servidor corre como un contenedor de Podman detrás del túnel de Cloudflare.
 

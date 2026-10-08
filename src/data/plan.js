@@ -77,19 +77,17 @@ export const PLAN = [
         id: 'escuelas',
         title: 'Escuelas, clases y cargos en el modelo',
         detail:
-          'Escuelas (verificadas o no) con dirección, varias clases por persona, profesorado con tutor/a y alumnado con delegado/a y subdelegado/a. Plan en docs/escuelas.md.',
+          'Escuelas (verificadas o no) con Director, varias clases por persona, Docentes con un Tutor y Estudiantes con Delegado y Subdelegado. Plan en docs/escuelas.md.',
       },
       {
         id: 'seed',
         title: 'Pasar seed.js a la base de datos',
-        detail:
-          'Sant Josep Obrer (verificada) con 1.º DAW A: horario real, módulos, profesorado, temas y eventos como migración de arranque.',
+        detail: 'Sant Josep Obrer (verificada) con 1.º DAW A: horario real, módulos, Docentes, temas y eventos como migración de arranque.',
       },
       {
         id: 'pruebas',
         title: 'Gente de prueba',
-        detail:
-          'Script aparte con dirección, tutor/a, profes, delegado/a, subdelegado/a, alumnado con los tres tratos y alguien de otra escuela.',
+        detail: 'Script aparte con Director, Tutor, Docentes, Delegado, Subdelegado, Estudiantes y alguien de otra escuela.',
       },
       {
         id: 'store',
@@ -112,18 +110,17 @@ export const PLAN = [
       {
         id: 'grupo',
         title: 'Unirse a una clase con código',
-        detail: 'Con el código de la clase o añadida por dirección o tutor/a. Selector de clase si estás en más de una.',
+        detail: 'Con el código de la clase o añadido por un Director o el Tutor. Selector de clase si estás en más de una.',
       },
       {
         id: 'roles',
         title: 'Gestión de la clase: miembros y cargos',
-        detail:
-          'Pantallas para que dirección y tutor/a añadan gente y nombren tutor/a, delegado/a y subdelegado/a; cargos con su trato (m, f, neutro).',
+        detail: 'Pantallas para que Director y Tutor añadan gente y nombren Tutor, Delegado y Subdelegado.',
       },
       {
         id: 'escuela',
         title: 'Crear escuela y verificación',
-        detail: 'Cualquiera crea su escuela y queda como director/a; la administración la marca como verificada.',
+        detail: 'Cualquiera crea su escuela y queda como Director; la administración la marca como verificada.',
       },
       { id: 'perfil', title: 'Perfil y ajustes', detail: 'Nombre, avatar, tema claro u oscuro y qué avisos quiere recibir.' },
     ],
