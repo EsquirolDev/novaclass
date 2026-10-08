@@ -24,7 +24,10 @@ export default [
       'react/jsx-uses-vars': 'error',
       /* Componentes usados en JSX sin importar (no-undef no los ve) */
       'react/jsx-no-undef': 'error',
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true, allowExportNames: ['useStore', 'useAuth', 'useClase'] }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true, allowExportNames: ['useStore', 'useAuth', 'useClase'] },
+      ],
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
     },
   },
