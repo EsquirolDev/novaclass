@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, countdown, isoDate, longDate, monthTitle, parseDate, relative, sameDay, shortDate, startOfWeek } from './dates.js'
+import {
+  addDays,
+  ago,
+  countdown,
+  fromPb,
+  isoDate,
+  longDate,
+  monthTitle,
+  parseDate,
+  relative,
+  sameDay,
+  shortDate,
+  startOfWeek,
+} from './dates.js'
 
 const at = (iso, time) => parseDate(iso, time)
 
@@ -48,5 +61,22 @@ describe('fechas', () => {
   it('countdown no baja de cero', () => {
     expect(countdown(at('2026-10-08', '10:00'), at('2026-10-09', '12:30'))).toEqual({ days: 1, hours: 2, minutes: 30 })
     expect(countdown(at('2026-10-09'), at('2026-10-08'))).toEqual({ days: 0, hours: 0, minutes: 0 })
+  })
+})
+
+describe('hace cuánto', () => {
+  const now = new Date(2026, 9, 8, 18, 0)
+  const at = (d, h, m = 0) => new Date(2026, 9, d, h, m)
+  it('minutos, horas, ayer, días y fecha', () => {
+    expect(ago(at(8, 17, 59, 40), now)).toBe('hace 1 min')
+    expect(ago(new Date(now - 20000), now)).toBe('ahora')
+    expect(ago(at(8, 17, 15), now)).toBe('hace 45 min')
+    expect(ago(at(8, 10), now)).toBe('hace 8 h')
+    expect(ago(at(7, 9), now)).toBe('ayer')
+    expect(ago(at(5, 9), now)).toBe('hace 3 días')
+    expect(ago(at(1, 9), now)).toBe('1 oct')
+  })
+  it('lee las fechas de PocketBase', () => {
+    expect(fromPb('2026-10-08 15:04:59.495Z').toISOString()).toBe('2026-10-08T15:04:59.495Z')
   })
 })

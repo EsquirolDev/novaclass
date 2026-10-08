@@ -13,18 +13,26 @@ export function voteDelta(v) {
  * Junta las dudas de ejemplo con lo que ha hecho la persona: sus dudas, respuestas, votos,
  * respuestas aceptadas, ediciones y borradas. `edits[id]` pisa los campos editables; `deleted[id]` la quita.
  */
-export function mergeDudas({ seed, own = [], answers = {}, accepted = {}, votes = {}, edits = {}, deleted = {} }) {
+export function mergeDudas({ seed, own = [], answers = {}, accepted = {}, votes = {}, edits = {}, deleted = {}, user }) {
   return [...own, ...seed]
     .filter(base => !deleted[base.id])
     .map(base => {
       const d = edits[base.id] ? { ...base, ...edits[base.id] } : base
       const list = [...d.answers, ...(answers[d.id] || [])].map(a => ({
         ...a,
+        mine: a.author === user,
         votes: a.votes + voteDelta(votes[`${d.id}:${a.id}`]),
         myVote: votes[`${d.id}:${a.id}`] || null,
       }))
       const acc = accepted[d.id] !== undefined ? accepted[d.id] : d.accepted
-      const full = { ...d, answers: list, accepted: acc, votes: d.votes + voteDelta(votes[d.id]), myVote: votes[d.id] || null }
+      const full = {
+        ...d,
+        mine: d.author === user,
+        answers: list,
+        accepted: acc,
+        votes: d.votes + voteDelta(votes[d.id]),
+        myVote: votes[d.id] || null,
+      }
       return { ...full, status: dudaStatus(full) }
     })
 }

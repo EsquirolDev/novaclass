@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { APUNTES, DUDAS, EVENTS, TEMAS, USER } from '../data/seed.js'
 import { parseDate } from '../lib/dates.js'
+import { toDudas } from '../lib/dudasData.js'
+import { useAuth } from './auth.jsx'
 import { useClase } from './clase.jsx'
 import { mergeDudas, pickEditable } from './dudas.js'
 
@@ -67,6 +69,7 @@ export function StoreProvider({ children }) {
 
   /* Entregas, exámenes y temas: los de la clase cargada de PocketBase o, sin ella, los de ejemplo */
   const clase = useClase()
+  const { user: authUser } = useAuth()
   const real = clase.status === 'ready'
   const baseEvents = real ? clase.events : EVENTS
   const temas = real ? clase.temas : TEMAS
@@ -89,18 +92,24 @@ export function StoreProvider({ children }) {
   )
   const saveStatus = clase.saveStatus
 
+  /* Dudas: las de la clase en PocketBase o, sin ella, las de ejemplo con lo hecho en este navegador */
   const dudas = useMemo(
     () =>
-      mergeDudas({
-        seed: DUDAS,
-        own: state.dudas,
-        answers: state.answers,
-        accepted: state.accepted,
-        votes: state.votes,
-        edits: state.edits,
-        deleted: state.deleted,
-      }),
-    [state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
+      real
+        ? toDudas({ ...clase.qa, uid: authUser?.id, members: clase.members, now })
+        : mergeDudas({
+            seed: DUDAS,
+            own: state.dudas,
+            answers: state.answers,
+            accepted: state.accepted,
+            votes: state.votes,
+            edits: state.edits,
+            deleted: state.deleted,
+            user: USER,
+          }),
+    // now se deja fuera a propósito: «hace 5 min» se actualiza con el resto de cambios, no cada 30 s
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [real, clase.qa, clase.members, authUser?.id, state.dudas, state.answers, state.accepted, state.votes, state.edits, state.deleted],
   )
 
   const apuntes = useMemo(() => [...state.apuntes, ...APUNTES], [state.apuntes])
@@ -156,8 +165,24 @@ export function StoreProvider({ children }) {
       setPlanTask: (id, done) => update(s => ({ plan: { ...s.plan, [id]: done } })),
       closePlan: () => update(() => ({ planClosed: true })),
       reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
+      /* Con clase real, las dudas van a PocketBase (src/state/dudasPb.js): pisan las acciones locales de arriba */
+      ...(real ? clase.qaActions : {}),
     }),
-    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, temas, dudas, apuntes, update, real, saveStatus],
+    [
+      now,
+      state.theme,
+      state.welcomed,
+      state.plan,
+      state.planClosed,
+      events,
+      temas,
+      dudas,
+      apuntes,
+      update,
+      real,
+      saveStatus,
+      clase.qaActions,
+    ],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

@@ -165,7 +165,7 @@ function DemoNotice() {
   return (
     <aside className="nc-demo" aria-label="Aviso">
       {clase.status === 'ready' ? (
-        <span>Horario, entregas y exámenes ya son los de tu clase. Las dudas y los apuntes todavía son de ejemplo.</span>
+        <span>Todo es ya de tu clase salvo los apuntes, que todavía son de ejemplo.</span>
       ) : (
         <span>
           Estás viendo una clase de ejemplo.

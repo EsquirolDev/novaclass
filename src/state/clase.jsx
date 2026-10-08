@@ -3,6 +3,7 @@ import { myRole, toEvents, toHorario, toTemas } from '../lib/claseData.js'
 import { AUTH_ON } from '../lib/flags.js'
 import { pb } from '../lib/pb.js'
 import { setHorario } from '../lib/schedule.js'
+import { loadQa, useDudasPb } from './dudasPb.js'
 import { useAuth } from './auth.jsx'
 
 /*
@@ -25,13 +26,15 @@ function remembered() {
 
 async function loadClase(group, userId) {
   const inGroup = pb.filter('group = {:g}', { g: group.id })
-  const [schedule, memberships, topics, events, statuses, staff] = await Promise.all([
+  const [schedule, memberships, topics, events, statuses, staff, modules, qa] = await Promise.all([
     pb.collection('schedule').getFullList({ filter: inGroup, expand: 'module' }),
     pb.collection('memberships').getFullList({ filter: inGroup, expand: 'user' }),
     pb.collection('topics').getFullList({ filter: inGroup, expand: 'module', sort: 'order' }),
     pb.collection('events').getFullList({ filter: inGroup, expand: 'module', sort: 'date,time' }),
     pb.collection('event_status').getFullList({ filter: pb.filter('user = {:u} && event.group = {:g}', { u: userId, g: group.id }) }),
     pb.collection('school_staff').getFullList({ filter: pb.filter('school = {:s} && user = {:u}', { s: group.school, u: userId }) }),
+    pb.collection('modules').getFullList({ fields: 'id,key' }),
+    loadQa(group.id),
   ])
   return {
     horario: toHorario(group, schedule, memberships),
@@ -41,6 +44,9 @@ async function loadClase(group, userId) {
     statusIds: Object.fromEntries(statuses.map(s => [s.event, s.id])),
     me: myRole(memberships, userId, staff.length > 0),
     members: memberships,
+    moduleIds: Object.fromEntries(modules.map(m => [m.key, m.id])),
+    /* Dudas, respuestas y votos en crudo (src/state/dudasPb.js) */
+    qa,
   }
 }
 
@@ -179,9 +185,12 @@ export function ClaseProvider({ children }) {
     }
   }, [groupId, patchEvent])
 
+  const qaActions = useDudasPb({ state, setState, uid, setSaveError })
+
   const value = useMemo(
     () => ({
       ...state,
+      qaActions,
       demo,
       saveStatus,
       saveError,
@@ -199,7 +208,7 @@ export function ClaseProvider({ children }) {
       /* «Ver una clase de ejemplo» desde la pantalla de sin clase; false para volver */
       showDemo: on => setDemo(on),
     }),
-    [state, demo, saveStatus, saveError],
+    [state, demo, saveStatus, saveError, qaActions],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

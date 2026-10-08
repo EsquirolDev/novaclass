@@ -8,7 +8,7 @@ import NoEncontrada from './NoEncontrada.jsx'
 
 /* Nueva pregunta y editar una propia (`id`): título, explicación, código y etiquetas */
 export default function DudaNueva({ id }) {
-  const { user, dudas, addDuda, editDuda } = useStore()
+  const { dudas, addDuda, editDuda } = useStore()
   const editing = id ? dudas.find(x => String(x.id) === id) : null
   const [subject, setSubject] = useState(editing ? editing.subject : null)
   const [title, setTitle] = useState(editing ? editing.title : '')
@@ -16,6 +16,8 @@ export default function DudaNueva({ id }) {
   const [code, setCode] = useState(editing ? editing.code || '' : '')
   const [tags, setTags] = useState(editing ? editing.tags.join(', ') : '')
   const [tried, setTried] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [sendError, setSendError] = useState(null)
 
   const tagList = parseTags(tags)
   const errors = validateDuda({ subject, title, body, tags: tagList })
@@ -23,18 +25,26 @@ export default function DudaNueva({ id }) {
   const similar = editing ? [] : similarDudas(dudas, title, subject)
 
   /* Solo quien preguntó puede editar; una duda que no existe es un 404 */
-  if (id && (!editing || editing.author !== user)) return <NoEncontrada />
+  if (id && (!editing || !editing.mine)) return <NoEncontrada />
   const back = editing ? '/dudas/' + editing.id : '/dudas'
 
-  function submit(e) {
+  /* Con clase real, espera al servidor (y necesita el id que crea); si falla, el formulario se queda como estaba */
+  async function submit(e) {
     e.preventDefault()
     setTried(true)
-    if (!valid) return
+    if (!valid || busy) return
     const fields = { subject, title: title.trim(), body: body.trim(), code: code.replace(/\s+$/, ''), tags: tagList }
-    if (editing) {
-      editDuda(editing.id, fields)
-      navigate(back)
-    } else navigate('/dudas/' + addDuda(fields))
+    setBusy(true)
+    setSendError(null)
+    try {
+      if (editing) {
+        await editDuda(editing.id, fields)
+        navigate(back)
+      } else navigate('/dudas/' + (await addDuda(fields)))
+    } catch {
+      setSendError('No se ha podido guardar la pregunta. Lo que has escrito sigue aquí: vuelve a intentarlo.')
+      setBusy(false)
+    }
   }
 
   const err = k =>
@@ -158,12 +168,18 @@ export default function DudaNueva({ id }) {
               {err('tags')}
             </label>
 
+            {sendError ? (
+              <p className="nc-form-err" role="alert">
+                <Icon name="alert" size={18} />
+                {sendError}
+              </p>
+            ) : null}
             <div className="nc-form-actions">
               <Button variant="ghost" href={href(back)}>
                 Cancelar
               </Button>
-              <Button variant="primary" type="submit" icon="check">
-                {editing ? 'Guardar cambios' : 'Publicar pregunta'}
+              <Button variant="primary" type="submit" icon="check" disabled={busy}>
+                {busy ? 'Guardando…' : editing ? 'Guardar cambios' : 'Publicar pregunta'}
               </Button>
             </div>
           </form>

@@ -32,7 +32,15 @@ El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo l
 - **En orden:** los cambios de un mismo evento van en cola, así que no se crean registros duplicados.
 - **Tiempo real:** la app escucha `event_status` (lo marcado desde otro dispositivo) y `events` (entregas nuevas o cambiadas) mientras la clase está abierta.
 
-Las dudas y los apuntes siguen siendo de ejemplo hasta las partes (c) y (d).
+Las dudas (`src/state/dudasPb.js` y `src/lib/dudasData.js`) se cargan con la clase: dudas, respuestas y votos en crudo, convertidos a la forma de la app. Lo tuyo se reconoce por tu cuenta, no por tu nombre.
+
+- **Al momento:** votar y aceptar se ven sin esperar y se deshacen si fallan. Los votos van en cola, así que tras varios clics rápidos el servidor queda igual que la pantalla.
+- **Esperando al servidor:** preguntar, responder y editar necesitan el registro creado. Si fallan, el texto se queda en el formulario.
+- **Borrar:** marca `deleted`, para poder deshacer.
+- **Tiempo real:** llegan las dudas, respuestas y votos de los demás. PocketBase no avisa cuando un cambio hace invisible una duda (al borrarla), así que se comprueba qué dudas siguen existiendo al volver a la pestaña y cada minuto.
+- **Pendiente:** las visitas no suben todavía (hace falta un hook).
+
+Los apuntes siguen siendo de ejemplo hasta la parte (d).
 
 ## Cuentas
 

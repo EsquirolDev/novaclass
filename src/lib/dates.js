@@ -99,3 +99,21 @@ export function relative(now, iso) {
 export function daysUntil(now, iso) {
   return Math.round((startOfDay(parseDate(iso)) - startOfDay(now)) / 86400000)
 }
+
+/* Fecha de PocketBase («2026-10-08 15:04:59.495Z») → Date */
+export function fromPb(stamp) {
+  return new Date(String(stamp).replace(' ', 'T'))
+}
+
+/* «ahora», «hace 5 min», «hace 2 h», «ayer», «hace 3 días» o, si es más antiguo, «8 oct» */
+export function ago(stamp, now) {
+  const d = stamp instanceof Date ? stamp : fromPb(stamp)
+  const mins = Math.floor((now - d) / 60000)
+  if (mins < 1) return 'ahora'
+  if (mins < 60) return `hace ${mins} min`
+  if (mins < 24 * 60) return `hace ${Math.floor(mins / 60)} h`
+  const days = Math.round((startOfDay(now) - startOfDay(d)) / 86400000)
+  if (days <= 1) return 'ayer'
+  if (days < 7) return `hace ${days} días`
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`
+}

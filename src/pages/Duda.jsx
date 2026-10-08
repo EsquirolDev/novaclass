@@ -21,16 +21,16 @@ import { href, navigate } from '../lib/router.jsx'
 import { useStore } from '../state/store.jsx'
 import NoEncontrada from './NoEncontrada.jsx'
 
-function Post({ voteKey, votes, myVote, author, teacher, when, children }) {
-  const { user, vote } = useStore()
+function Post({ voteKey, votes, myVote, author, mine, teacher, when, children }) {
+  const { vote } = useStore()
   return (
     <div className="nc-post">
       <VoteCounter count={votes} voted={myVote} onUp={() => vote(voteKey, 'up')} onDown={() => vote(voteKey, 'down')} />
       <div style={{ minWidth: 0 }}>
         {children}
         <div className="by">
-          <Avatar name={author} size={32} me={author === user} />
-          <b>{author === user ? 'Tú' : author}</b>
+          <Avatar name={author} size={32} me={mine} />
+          <b>{mine ? 'Tú' : author}</b>
           {teacher ? <span className="nc-teacher">Profe</span> : null}· {when}
         </div>
       </div>
@@ -39,14 +39,16 @@ function Post({ voteKey, votes, myVote, author, teacher, when, children }) {
 }
 
 export default function Duda({ id }) {
-  const { user, now, dudas, events, apuntes, addAnswer, acceptAnswer, deleteDuda } = useStore()
+  const { now, dudas, events, apuntes, addAnswer, acceptAnswer, deleteDuda } = useStore()
   const [order, setOrder] = useState('votos')
   const [confirming, setConfirming] = useState(false)
   const [text, setText] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(null)
   const d = dudas.find(x => String(x.id) === id)
   if (!d) return <NoEncontrada />
 
-  const isMine = d.author === user
+  const isMine = d.mine
   const answers = [...d.answers].sort((a, b) => {
     if (a.id === d.accepted) return -1
     if (b.id === d.accepted) return 1
@@ -57,11 +59,19 @@ export default function Duda({ id }) {
   const apunte = apuntes.find(a => a.subject === d.subject)
   const parecidas = dudas.filter(x => x.subject === d.subject && x.id !== d.id).slice(0, 3)
 
-  function send(e) {
+  /* Con clase real, responder espera al servidor: el texto no se borra hasta que la respuesta está guardada */
+  async function send(e) {
     e.preventDefault()
-    if (!text.trim()) return
-    addAnswer(d.id, text.trim())
-    setText('')
+    if (!text.trim() || sending) return
+    setSending(true)
+    setSendError(null)
+    try {
+      await addAnswer(d.id, text.trim())
+      setText('')
+    } catch {
+      setSendError('No se ha podido publicar la respuesta. Tu texto sigue aquí: vuelve a intentarlo.')
+    }
+    setSending(false)
   }
 
   return (
@@ -94,7 +104,7 @@ export default function Duda({ id }) {
             <h1 className="na-t-display">{d.title}</h1>
           </header>
           <article className="na-card na-card--flush">
-            <Post voteKey={d.id} votes={d.votes} myVote={d.myVote} author={d.author} when={d.when}>
+            <Post voteKey={d.id} votes={d.votes} myVote={d.myVote} author={d.author} mine={d.mine} when={d.when}>
               {d.body ? <Paragraphs text={d.body} /> : null}
               {d.code ? <CodeBlock code={d.code} /> : null}
               {d.tags.length ? (
@@ -140,7 +150,15 @@ export default function Duda({ id }) {
                       Respuesta aceptada<span>La marcó quien preguntó</span>
                     </div>
                   ) : null}
-                  <Post voteKey={`${d.id}:${a.id}`} votes={a.votes} myVote={a.myVote} author={a.author} teacher={a.teacher} when={a.when}>
+                  <Post
+                    voteKey={`${d.id}:${a.id}`}
+                    votes={a.votes}
+                    myVote={a.myVote}
+                    author={a.author}
+                    mine={a.mine}
+                    teacher={a.teacher}
+                    when={a.when}
+                  >
                     <Paragraphs text={a.body} />
                     {a.code ? <CodeBlock code={a.code} /> : null}
                     {a.after ? <Paragraphs text={a.after} /> : null}
@@ -160,6 +178,12 @@ export default function Duda({ id }) {
             ) : null}
           </div>
 
+          {sendError ? (
+            <p className="nc-form-err" role="alert">
+              <Icon name="alert" size={18} />
+              {sendError}
+            </p>
+          ) : null}
           <form className="na-card nc-reply" onSubmit={send}>
             <label htmlFor="rep">Tu respuesta</label>
             <textarea
@@ -170,8 +194,8 @@ export default function Duda({ id }) {
             />
             <div className="row">
               <span className="na-t-label na-muted">Usa `comillas invertidas` para el código</span>
-              <Button variant="primary" icon="message" type="submit" disabled={!text.trim()}>
-                Responder
+              <Button variant="primary" icon="message" type="submit" disabled={!text.trim() || sending}>
+                {sending ? 'Publicando…' : 'Responder'}
               </Button>
             </div>
           </form>

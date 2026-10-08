@@ -6,7 +6,7 @@ import { href, navigate } from '../lib/router.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function Dudas() {
-  const { user, dudas, restoreDuda } = useStore()
+  const { dudas, restoreDuda } = useStore()
   /* Recién borrada (llega con ?eliminada=id): aviso con «Deshacer» hasta que se cierre o se deshaga */
   const [removed] = useState(() => new URLSearchParams(window.location.hash.split('?')[1] || '').get('eliminada'))
   const [subj, setSubj] = useState(null)
@@ -16,7 +16,7 @@ export default function Dudas() {
   const list = bySubj.filter(d => st === 'todas' || (st === 'sin' ? d.status === 'sin-responder' : d.status === 'resuelta'))
   const sinCount = bySubj.filter(d => d.status === 'sin-responder').length
   const resCount = bySubj.filter(d => d.status === 'resuelta').length
-  const mine = dudas.reduce((n, d) => n + d.answers.filter(a => a.author === user).length, 0)
+  const mine = dudas.reduce((n, d) => n + d.answers.filter(a => a.mine).length, 0)
 
   return (
     <div className="nc-screen">
@@ -120,8 +120,8 @@ export default function Dudas() {
                           </span>
                         ))}
                         <span className="by">
-                          <Avatar name={d.author} size={26} me={d.author === user} />
-                          <b>{d.author === user ? 'Tú' : d.author}</b>
+                          <Avatar name={d.author} size={26} me={d.mine} />
+                          <b>{d.mine ? 'Tú' : d.author}</b>
                           {d.when}
                         </span>
                       </div>
