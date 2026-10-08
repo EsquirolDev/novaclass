@@ -73,7 +73,8 @@ migrate(
         { name: 'name', type: 'text', required: true, min: 3, max: 120 },
         { name: 'city', type: 'text', max: 80 },
         { name: 'verified', type: 'bool' },
-        { name: 'created_by', type: 'relation', collectionId: usersId, required: true, maxSelect: 1 },
+        /* Vacío en las escuelas que da de alta la administración (datos de arranque) */
+        { name: 'created_by', type: 'relation', collectionId: usersId, maxSelect: 1 },
         ...stamps(),
       ],
     })

@@ -88,6 +88,6 @@ Todas usan `@prueba.novaclass` y tienen contraseña conocida. Se pueden borrar t
 ## Orden de trabajo
 
 1. **Hecho.** Modelo con escuelas, `memberships` y cargos, reglas según la tabla y hooks. Probado en `backend/tests/rules.test.js`. Se reescribió la primera migración en lugar de añadir una segunda, porque no se había aplicado en ningún sitio.
-2. **Datos de arranque.** Sant Josep Obrer con su clase, horario, módulos, Docentes, temas y eventos.
+2. **Hecho.** Datos de arranque (`1791500100_sant_josep_obrer.js`): los 8 módulos y Sant Josep Obrer (verificada) con 1.º DAW A, sus 10 Docentes pendientes y las 31 franjas del horario. Solo lo real: las entregas, los exámenes, los temas y las dudas de `seed.js` son de ejemplo y van con el script de gente de prueba. El Tutor y la dirección se nombran desde el panel. `backend/tests/seed.test.js` comprueba que la base de datos y el frontend dicen lo mismo.
 3. **Script de gente de prueba.**
 4. **Frontend.** Cargos en la app, selector de clase y, más adelante, las pantallas de gestión: crear escuela, crear clase, miembros y cargos.

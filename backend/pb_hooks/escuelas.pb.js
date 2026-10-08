@@ -7,6 +7,8 @@
 
 /* Quien crea una escuela queda como su Director */
 onRecordAfterCreateSuccess(e => {
+  /* Las que da de alta la administración no tienen creador: la dirección se nombra a mano */
+  if (!e.record.get('created_by')) return e.next()
   const staff = new Record(e.app.findCollectionByNameOrId('school_staff'))
   staff.set('school', e.record.id)
   staff.set('user', e.record.get('created_by'))

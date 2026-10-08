@@ -83,7 +83,9 @@ export const PLAN = [
       {
         id: 'seed',
         title: 'Pasar seed.js a la base de datos',
-        detail: 'Sant Josep Obrer (verificada) con 1.º DAW A: horario real, módulos, Docentes, temas y eventos como migración de arranque.',
+        detail:
+          'Sant Josep Obrer (verificada) con 1.º DAW A: módulos, Docentes y horario real como migración. Lo de ejemplo (entregas, temas, dudas) va con la gente de prueba.',
+        done: true,
       },
       {
         id: 'pruebas',

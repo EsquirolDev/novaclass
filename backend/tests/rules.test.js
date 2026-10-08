@@ -1,47 +1,16 @@
-import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { HAS_PB, PASS, startPocketBase } from './server.js'
 
 /*
  * Reglas de acceso de PocketBase contra un servidor de verdad (docs/escuelas.md, tabla «Quién puede hacer qué»).
- * Arranca backend/bin/pocketbase en una carpeta temporal con las migraciones y los hooks, crea dos escuelas con
- * su gente y prueba lo que cada cargo puede y no puede hacer. Si no está el binario, se salta.
+ * Crea dos escuelas con su gente y prueba lo que cada cargo puede y no puede hacer. Sin binario, se salta.
  */
-const ROOT = new URL('..', import.meta.url).pathname
-const BIN = join(ROOT, 'bin/pocketbase')
-const PORT = 8790 + Math.floor(Math.random() * 100)
-const BASE = `http://127.0.0.1:${PORT}`
-const PASS = 'contraseña-de-prueba-1'
 const SESSIONS = [{ start: '15:00', end: '15:55' }]
 
-let dir, server, admin
+let pb, admin
 const u = {} // usuarios: { id, as }
 const r = {} // registros
 
-async function api(token, method, path, body) {
-  const res = await fetch(BASE + path, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: token } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-  const data = await res.json().catch(() => null)
-  return { ok: res.ok, status: res.status, data }
-}
-const client = token => ({
-  get: p => api(token, 'GET', p),
-  post: (c, b) => api(token, 'POST', `/api/collections/${c}/records`, b),
-  patch: (c, id, b) => api(token, 'PATCH', `/api/collections/${c}/records/${id}`, b),
-  del: (c, id) => api(token, 'DELETE', `/api/collections/${c}/records/${id}`),
-  list: (c, q = '') => api(token, 'GET', `/api/collections/${c}/records?perPage=200${q}`),
-  one: (c, id) => api(token, 'GET', `/api/collections/${c}/records/${id}`),
-})
-async function login(collection, email) {
-  const res = await api(null, 'POST', `/api/collections/${collection}/auth-with-password`, { identity: email, password: PASS })
-  if (!res.ok) throw new Error('login ' + email + ': ' + JSON.stringify(res.data))
-  return client(res.data.token)
-}
 /* Crea con el admin y falla en voz alta: los datos de partida tienen que existir sí o sí */
 async function make(c, body) {
   const res = await admin.post(c, body)
@@ -50,28 +19,14 @@ async function make(c, body) {
 }
 const ids = res => (res.data?.items || []).map(x => x.id)
 
-describe.skipIf(!existsSync(BIN))('reglas de acceso de PocketBase', () => {
+describe.skipIf(!HAS_PB)('reglas de acceso de PocketBase', () => {
   beforeAll(async () => {
-    dir = mkdtempSync(join(tmpdir(), 'novaclass-pb-'))
-    const args = ['--dir', join(dir, 'data'), '--migrationsDir', join(ROOT, 'pb_migrations'), '--hooksDir', join(ROOT, 'pb_hooks')]
-    const up = spawnSync(BIN, ['superuser', 'upsert', 'admin@test.local', PASS, ...args], { encoding: 'utf8' })
-    if (up.status !== 0) throw new Error(up.stderr || up.stdout)
-    server = spawn(BIN, ['serve', '--http', `127.0.0.1:${PORT}`, ...args], { stdio: 'ignore' })
-    for (let i = 0; i < 50; i++) {
-      if (
-        await fetch(BASE + '/api/health').then(
-          x => x.ok,
-          () => false,
-        )
-      )
-        break
-      await new Promise(x => setTimeout(x, 100))
-    }
-    admin = await login('_superusers', 'admin@test.local')
+    pb = await startPocketBase()
+    admin = pb.admin
 
     for (const n of ['dir', 'tut', 'doc', 'del', 'sub', 'est', 'est2', 'otro', 'ajeno']) {
       u[n] = await make('users', { email: n + '@test.local', password: PASS, passwordConfirm: PASS, name: n })
-      u[n].as = await login('users', n + '@test.local')
+      u[n].as = await pb.login('users', n + '@test.local')
     }
     /* Dos escuelas: Sant Josep Obrer (dir) y otra (otro). El hook hace Director a quien la crea. */
     r.sjo = (await u.dir.as.post('schools', { name: 'Sant Josep Obrer', city: 'Palma', created_by: u.dir.id })).data
@@ -88,13 +43,11 @@ describe.skipIf(!existsSync(BIN))('reglas de acceso de PocketBase', () => {
     r.mEst2 = await m(r.A, u.est2, 'estudiante')
     r.mEst2b = await m(r.A2, u.est2, 'estudiante')
     r.mAjeno = await m(r.O, u.ajeno, 'estudiante')
-    r.bd = await make('modules', { key: 'bd', code: 'BD', name: 'Bases de Datos', has_tasks: true })
+    /* Los módulos ya vienen de los datos de arranque */
+    r.bd = (await admin.list('modules', `&filter=${encodeURIComponent("key='bd'")}`)).data.items[0]
   }, 30000)
 
-  afterAll(() => {
-    server?.kill()
-    if (dir) rmSync(dir, { recursive: true, force: true })
-  })
+  afterAll(() => pb?.stop())
 
   const duda = (author, group, extra = {}) => ({
     group: group.id,

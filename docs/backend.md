@@ -50,6 +50,18 @@ La estructura es escuela → clases → personas. El plan, con la tabla de quié
 
 Fechas y horas van como texto local («2026-10-09», «23:59»), igual que en el frontend, para no tener problemas de zona horaria.
 
+## Datos de arranque
+
+`1791500100_sant_josep_obrer.js` carga lo real:
+
+- los 8 módulos de DAW
+- Sant Josep Obrer (verificada)
+- 1.º DAW A, con sus franjas y el patio
+- sus 10 Docentes, pendientes de crear cuenta
+- las 31 franjas del horario
+
+Los datos se copiaron de `src/data/seed.js` y `subjects.js` y quedan fijos en la migración. `backend/tests/seed.test.js` falla si el frontend y la base de datos dejan de coincidir.
+
 ## Reglas de acceso
 
 Son la seguridad de verdad: el frontend solo esconde botones. Se construyen con unas pocas funciones al principio de la migración:
@@ -80,7 +92,7 @@ Los índices únicos garantizan dos cosas: una persona aparece una sola vez por 
 - un Tutor que podía nombrar Tutor
 - sin el hook de cargos
 
-Si falta el binario, el test se salta. Se ejecuta con el resto: `npx vitest run`.
+`backend/tests/server.js` arranca el PocketBase temporal que comparten los tests. Si falta el binario, los tests se saltan. Se ejecuta con el resto: `npx vitest run`.
 
 ## Pendiente
 
