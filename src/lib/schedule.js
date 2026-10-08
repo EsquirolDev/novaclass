@@ -1,4 +1,4 @@
-import { BREAK, SCHEDULE, SESSIONS, TEACHERS } from '../data/seed.js'
+import * as demo from '../data/seed.js'
 import { subjectOf } from '../data/subjects.js'
 
 export const DAY_NAMES = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
@@ -6,7 +6,7 @@ export const DAY_SHORT = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie']
 export const DAYS = [1, 2, 3, 4, 5]
 
 /* '09:05' → '9:05' */
-export const trim = t => t.replace(/^0/, '')
+export const trim = t => (t ? t.replace(/^0/, '') : '')
 
 /* '15:55' → 15.9166 */
 export function toHours(time) {
@@ -14,8 +14,26 @@ export function toHours(time) {
   return h + m / 60
 }
 
-export const DAY_START = toHours(SESSIONS[0].start)
-export const DAY_END = toHours(SESSIONS[SESSIONS.length - 1].end)
+/*
+ * Horario de la clase que se está viendo. Por defecto, el de ejemplo (seed.js); al cargar una clase de PocketBase,
+ * setHorario lo cambia. Son exportaciones «vivas»: quien las importa ve siempre el valor actual.
+ * BREAK es null si la clase no tiene patio.
+ */
+export let SESSIONS = demo.SESSIONS
+export let BREAK = demo.BREAK
+export let SCHEDULE = demo.SCHEDULE
+export let TEACHERS = demo.TEACHERS
+export let DAY_START = toHours(SESSIONS[0].start)
+export let DAY_END = toHours(SESSIONS[SESSIONS.length - 1].end)
+
+export function setHorario(h = demo) {
+  SESSIONS = h.SESSIONS
+  BREAK = h.BREAK || null
+  SCHEDULE = h.SCHEDULE
+  TEACHERS = h.TEACHERS
+  DAY_START = SESSIONS.length ? toHours(SESSIONS[0].start) : 0
+  DAY_END = SESSIONS.length ? toHours(SESSIONS[SESSIONS.length - 1].end) : 0
+}
 
 export function classInfo(id) {
   return subjectOf(id)
@@ -25,8 +43,15 @@ export function teacherShort(key) {
   return TEACHERS[key]?.short || key
 }
 
+/* Docentes de un módulo según el horario, por orden alfabético */
 export function teacherNames(id) {
-  return (classInfo(id)?.teachers || []).map(k => TEACHERS[k]?.name || k)
+  const keys = new Set(
+    Object.values(SCHEDULE)
+      .flat()
+      .filter(c => c && c.id === id && c.teacher)
+      .map(c => c.teacher),
+  )
+  return [...keys].map(k => TEACHERS[k]?.name || k).sort((a, b) => a.localeCompare(b, 'es'))
 }
 
 /*
@@ -40,7 +65,7 @@ export function blocksFor(day, { free = false } = {}) {
     const id = cell ? cell.id : null
     const teacher = cell ? cell.teacher : null
     const last = out[out.length - 1]
-    const crossesBreak = i === BREAK.after + 1
+    const crossesBreak = !!BREAK && i === BREAK.after + 1
     if (last && last.id === id && last.teacher === teacher && last.to === i - 1 && !crossesBreak) {
       last.to = i
       last.end = SESSIONS[i].end
@@ -86,7 +111,7 @@ export function nowStatus(now) {
   const mins = now.getHours() * 60 + now.getMinutes()
   const toMin = t => Math.round(toHours(t) * 60)
   if (h < DAY_START) return { state: 'antes', next }
-  if (h >= toHours(BREAK.start) && h < toHours(BREAK.end)) return { state: 'patio', next, left: toMin(BREAK.end) - mins }
+  if (BREAK && h >= toHours(BREAK.start) && h < toHours(BREAK.end)) return { state: 'patio', next, left: toMin(BREAK.end) - mins }
   const block = blocks.find(b => h >= toHours(b.start) && h < toHours(b.end))
   if (!block || (!block.id && !next)) return { state: 'fin' }
   const left = toMin(block.end) - mins

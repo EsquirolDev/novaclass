@@ -1,11 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Icon, ListRow, Sigil, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
-import { BREAK } from '../data/seed.js'
+import { Button, EmptyState, Icon, ListRow, Sigil, StatusBadge, SubjectTag, Tabs } from '../components/index.js'
 import { SUBJECTS, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { longDate, relative } from '../lib/dates.js'
 import { href } from '../lib/router.jsx'
-import { blocksFor, classInfo, DAY_NAMES, DAY_SHORT, DAYS, dayEnd, nowStatus, teacherShort, toHours, trim } from '../lib/schedule.js'
+import {
+  BREAK,
+  blocksFor,
+  classInfo,
+  totalHours,
+  DAY_NAMES,
+  DAY_SHORT,
+  DAYS,
+  dayEnd,
+  nowStatus,
+  teacherShort,
+  toHours,
+  trim,
+} from '../lib/schedule.js'
 import { useStore } from '../state/store.jsx'
 
 /* Piezas del calendario que comparten la pantalla de escritorio (Calendario.jsx) y la de móvil (CalendarioMovil.jsx) */
@@ -260,6 +272,7 @@ export function HorarioDia({ now, active }) {
   const [day, setDay] = useState(today >= 1 && today <= 5 ? today : 1)
   const h = now.getHours() + now.getMinutes() / 60
   const blocks = blocksFor(day, { free: true })
+  if (!totalHours()) return <SinHorario />
   return (
     <div className="nc-horario-wrap">
       <NowLine now={now} />
@@ -271,8 +284,8 @@ export function HorarioDia({ now, active }) {
       />
       <ol className="nc-horario nc-hday" aria-label={'Clases del ' + DAY_NAMES[day].toLowerCase()}>
         {blocks.map(b => (
-          <li key={b.from} className={b.from === BREAK.after + 1 ? 'after-brk' : undefined}>
-            {b.from === BREAK.after + 1 ? (
+          <li key={b.from} className={BREAK && b.from === BREAK.after + 1 ? 'after-brk' : undefined}>
+            {BREAK && b.from === BREAK.after + 1 ? (
               <div className="brkrow">
                 {BREAK.label} · {BREAK.start}–{BREAK.end}
               </div>
@@ -291,7 +304,16 @@ export function HorarioDia({ now, active }) {
           </li>
         ))}
       </ol>
-      <p className="na-t-label na-muted">Sales a las {trim(dayEnd(day))}.</p>
+      <p className="na-t-label na-muted">{dayEnd(day) ? `Sales a las ${trim(dayEnd(day))}.` : 'Este día no hay clase.'}</p>
     </div>
+  )
+}
+
+/* Una clase recién creada, sin franjas en el horario */
+export function SinHorario() {
+  return (
+    <EmptyState icon="clock" title="Esta clase aún no tiene horario" className="nc-state-card">
+      Lo añaden los Docentes, el Delegado o el Subdelegado. Mientras tanto, las entregas y los exámenes están en Mes y Semana.
+    </EmptyState>
   )
 }

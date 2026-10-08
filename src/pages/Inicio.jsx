@@ -5,6 +5,7 @@ import { href } from '../lib/router.jsx'
 import { nextUp, weekDays } from '../state/selectors.js'
 import { firstName } from '../lib/users.js'
 import { useAuth } from '../state/auth.jsx'
+import { useClase } from '../state/clase.jsx'
 import { useStore } from '../state/store.jsx'
 
 /*
@@ -13,6 +14,7 @@ import { useStore } from '../state/store.jsx'
  */
 export default function Inicio() {
   const { user: auth } = useAuth()
+  const clase = useClase()
   const { user, now, events, dudas, apuntes, welcomed, setWelcomed, setDone } = useStore()
   const pending = events.filter(e => e.type !== 'festivo' && !e.done && e.at > now)
   const next = nextUp(events, now)
@@ -30,6 +32,12 @@ export default function Inicio() {
           <h1 className="na-t-display-xl nc-only-desktop">{todayLong(now)}</h1>
           <h1 className="na-t-display-xl nc-only-mobile">{todayShort(now)}</h1>
           <p className="na-t-subtitle nc-greet-summary">{weekSummary(week)}</p>
+          {clase.group ? (
+            <p className="na-t-label na-muted nc-greet-class">
+              {clase.group.name} · {clase.school?.name}
+              {clase.school?.verified ? <Icon name="shield" size={15} label="Escuela verificada" /> : null}
+            </p>
+          ) : null}
         </header>
 
         {!welcomed ? <Welcome onClose={() => setWelcomed(true)} /> : null}

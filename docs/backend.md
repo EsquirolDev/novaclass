@@ -17,6 +17,17 @@ El panel queda en http://127.0.0.1:8091/_/. El puerto es el 8091 porque el 8090 
 
 El frontend habla con PocketBase por `/api` en el mismo dominio. En desarrollo lo reenvía el proxy de Vite (`vite.config.js`, `PB_DEV_URL`) y en el servidor lo hará el proxy de delante. El panel de administración (`/_/`) no se reenvía nunca: solo se abre desde el propio servidor, en `http://127.0.0.1:8091/_/`. El cliente está en `src/lib/pb.js` y la sesión en `src/state/auth.jsx`.
 
+## La clase en la app
+
+`src/state/clase.jsx` carga, con la sesión iniciada, las clases que puede ver la persona: las suyas y, si es Director, las de su escuela. De la elegida carga el horario, los Docentes, los temas, las entregas y los exámenes, y lo que ha marcado (`event_status`).
+
+- **Varias clases:** se elige en el menú de la cuenta y se recuerda en el navegador.
+- **Sin clase:** sale una pantalla que lo explica, con la opción de ver la clase de ejemplo.
+- **Formato:** `src/lib/claseData.js` pasa los registros a la misma forma que `src/data/seed.js`, con tests. Así las pantallas no cambian.
+- **Horario:** `src/lib/schedule.js` lo guarda como exportaciones vivas (`setHorario`).
+
+Las dudas y los apuntes siguen siendo de ejemplo hasta las partes (c) y (d).
+
 ## Cuentas
 
 Encendidas. `VITE_AUTH=off` las apaga: la app se abre sin login y con la clase de ejemplo. Dentro de la app, los datos siguen siendo los de ejemplo hasta conectar el store a PocketBase.

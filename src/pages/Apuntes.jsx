@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { Avatar, Button, Card, EmptyState, FileBadge, Icon, ListRow, Pill, SubjectTag, Tabs } from '../components/index.js'
-import { TEMAS } from '../data/seed.js'
 import { SUBJECTS, SUBJECT_ORDER } from '../data/subjects.js'
 import { useStore } from '../state/store.jsx'
 
@@ -179,7 +178,7 @@ function UploadCard({ onPublish }) {
   const [url, setUrl] = useState('')
   const [file, setFile] = useState(null)
   const [drag, setDrag] = useState(false)
-  const temas = TEMAS[upSubj] || []
+  const temas = useStore().temas[upSubj] || []
 
   function pick(f) {
     if (!f) return

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cx } from '../lib/cx.js'
 import { href } from '../lib/router.jsx'
 import { useAuth } from '../state/auth.jsx'
+import { useClase } from '../state/clase.jsx'
 import { useStore } from '../state/store.jsx'
 import { Button, Pill } from './controls.jsx'
 import { Avatar } from './display.jsx'
@@ -93,6 +94,7 @@ export function BottomNav({ active, className }) {
 function UserMenu({ size }) {
   const { user, logout } = useAuth()
   const { user: demoUser } = useStore()
+  const clase = useClase()
   const [open, setOpen] = useState(false)
   const box = useRef(null)
   useEffect(() => {
@@ -126,6 +128,33 @@ function UserMenu({ size }) {
             <b>{name}</b>
             <span>{user.email}</span>
           </p>
+          {clase.classes?.length ? (
+            <div className="nc-usermenu-classes">
+              <p className="na-t-eyebrow na-muted">{clase.classes.length > 1 ? 'Tus clases' : 'Tu clase'}</p>
+              {clase.classes.map(g => {
+                const on = clase.group?.id === g.id
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    className={cx('nc-classopt', on && 'is-on')}
+                    aria-pressed={on}
+                    disabled={clase.classes.length === 1}
+                    onClick={() => {
+                      clase.select(g.id)
+                      setOpen(false)
+                    }}
+                  >
+                    <b>{g.name}</b>
+                    <span>
+                      {g.expand?.school?.name}
+                      {g.expand?.school?.verified ? <Icon name="shield" size={14} label="Escuela verificada" /> : null}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          ) : null}
           <Button variant="secondary" icon="logout" block onClick={logout}>
             Cerrar sesión
           </Button>

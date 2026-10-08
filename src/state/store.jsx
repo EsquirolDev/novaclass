@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { APUNTES, DUDAS, EVENTS, USER } from '../data/seed.js'
+import { APUNTES, DUDAS, EVENTS, TEMAS, USER } from '../data/seed.js'
 import { parseDate } from '../lib/dates.js'
+import { useClase } from './clase.jsx'
 import { mergeDudas, pickEditable } from './dudas.js'
 
 /*
@@ -63,12 +64,17 @@ export function StoreProvider({ children }) {
 
   const update = useCallback(fn => setState(s => ({ ...s, ...fn(s) })), [])
 
+  /* Entregas, exámenes y temas: los de la clase cargada de PocketBase o, sin ella, los de ejemplo */
+  const clase = useClase()
+  const real = clase.status === 'ready'
+  const baseEvents = real ? clase.events : EVENTS
+  const temas = real ? clase.temas : TEMAS
   const events = useMemo(
     () =>
-      EVENTS.map(e => ({ ...e, done: e.id in state.done ? state.done[e.id] : !!e.done, at: parseDate(e.date, e.time) })).sort(
-        (a, b) => a.at - b.at,
-      ),
-    [state.done],
+      baseEvents
+        .map(e => ({ ...e, done: e.id in state.done ? state.done[e.id] : !!e.done, at: parseDate(e.date, e.time) }))
+        .sort((a, b) => a.at - b.at),
+    [baseEvents, state.done],
   )
 
   const dudas = useMemo(
@@ -96,6 +102,7 @@ export function StoreProvider({ children }) {
       plan: state.plan,
       planClosed: state.planClosed,
       events,
+      temas,
       dudas,
       apuntes,
       setTheme: theme => update(() => ({ theme })),
@@ -136,7 +143,7 @@ export function StoreProvider({ children }) {
       closePlan: () => update(() => ({ planClosed: true })),
       reset: () => setState({ ...EMPTY, theme: state.theme, plan: state.plan, planClosed: state.planClosed }),
     }),
-    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, dudas, apuntes, update],
+    [now, state.theme, state.welcomed, state.plan, state.planClosed, events, temas, dudas, apuntes, update],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

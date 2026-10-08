@@ -16,7 +16,6 @@ import {
   Tabs,
   VoteCounter,
 } from '../components/index.js'
-import { TEMAS } from '../data/seed.js'
 import { SUBJECTS, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { countdown, daysUntil, relative, shortDate } from '../lib/dates.js'
@@ -27,7 +26,7 @@ import { useStore } from '../state/store.jsx'
 import NoEncontrada from './NoEncontrada.jsx'
 
 export default function Asignatura({ id }) {
-  const { now, events, dudas, apuntes, setDone } = useStore()
+  const { now, events, temas, dudas, apuntes, setDone } = useStore()
   const [tab, setTab] = useState('entregas')
   const s = SUBJECTS[id]
   if (!s) return <NoEncontrada />
@@ -320,7 +319,7 @@ export default function Asignatura({ id }) {
             </Card>
             <Card title="Temas">
               <ol className="nc-temas" style={subjectVars(id)}>
-                {(TEMAS[id] || []).map(([t, st], i) => (
+                {(temas[id] || []).map(([t, st], i) => (
                   <li key={i} className={st === 'ok' || st === 'now' ? st : ''}>
                     <span className="n">{st === 'ok' ? <Icon name="check" size={14} strokeWidth={3} /> : i + 1}</span>
                     {t}

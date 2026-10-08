@@ -577,3 +577,16 @@ main:focus{outline:none}
 .nc-demo button{flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--ink-muted);font:400 22px/1 var(--font-text);cursor:pointer}
 .nc-demo button:hover{color:var(--ink)}
 @media (max-width:380px){.nc-pub-brand .na-brand{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
+.nc-demo-link{width:auto !important;height:auto !important;padding:0 !important;border-radius:0 !important;font:700 13px/1.35 var(--font-text) !important;color:var(--ink) !important;text-decoration:underline;text-underline-offset:3px}
+.nc-noclase{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-xl);max-width:640px;margin:0 auto}
+.nc-noclase h1.t{margin:0;font:800 24px/1.2 var(--font-display);letter-spacing:-.01em}
+.nc-greet-class{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0}
+.nc-greet-class .na-icon,.nc-classopt .na-icon{color:var(--accent)}
+.nc-usermenu-classes{display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line)}
+.nc-usermenu-classes .na-t-eyebrow{margin:0 0 2px}
+.nc-classopt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;min-height:var(--touch-min);padding:8px 12px;border:0;border-radius:var(--radius-md);background:var(--surface-2);color:var(--ink);text-align:left;cursor:pointer}
+.nc-classopt:disabled{cursor:default}
+.nc-classopt.is-on{background:var(--ink);color:var(--bg)}
+.nc-classopt.is-on .na-icon{color:var(--bg)}
+.nc-classopt b{font:700 14px/1.2 var(--font-text)}
+.nc-classopt span{display:inline-flex;align-items:center;gap:5px;font:500 12px/1.2 var(--font-text);opacity:.8}

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { AppBar, BottomNav, ErrorBoundary, LoadingState, OfflineBanner, TopBar } from './components/index.js'
+import { AppBar, BottomNav, ErrorBoundary, ErrorState, LoadingState, OfflineBanner, TopBar } from './components/index.js'
 import { planFinished } from './data/plan.js'
 import { AUTH_ON } from './lib/flags.js'
 import { match, navigate, useRoute } from './lib/router.jsx'
@@ -7,7 +7,9 @@ import Inicio from './pages/Inicio.jsx'
 import { Entrar, Recuperar, Registro } from './pages/publico/Cuenta.jsx'
 import Landing from './pages/publico/Landing.jsx'
 import NoEncontrada from './pages/NoEncontrada.jsx'
+import SinClase from './pages/SinClase.jsx'
 import { useAuth } from './state/auth.jsx'
+import { useClase } from './state/clase.jsx'
 import { useStore } from './state/store.jsx'
 
 /* Inicio va en el paquete principal; el resto de pantallas se cargan al entrar (mientras, se ve el esqueleto) */
@@ -68,6 +70,7 @@ function PrivateApp({ path }) {
   }, [publicOnly])
   const { section, Page, params } = resolve(publicOnly ? '/' : path)
   usePlanKey(path)
+  const clase = useClase()
   return (
     <div className="nc-app">
       <button type="button" className="nc-skip" onClick={skipToMain}>
@@ -77,11 +80,27 @@ function PrivateApp({ path }) {
       <AppBar className="nc-only-mobile" />
       <OfflineBanner />
       <DemoNotice />
-      <ErrorBoundary resetKey={path}>
-        <Suspense fallback={<LoadingState />}>
-          <Page {...params} key={path} />
-        </Suspense>
-      </ErrorBoundary>
+      {/* Mientras carga la clase, el esqueleto; sin clase, la pantalla que lo explica; si falla, reintentar */}
+      {clase.status === 'loading' ? (
+        <LoadingState label="Cargando tu clase…" />
+      ) : clase.status === 'none' ? (
+        <SinClase />
+      ) : clase.status === 'error' ? (
+        <div className="nc-screen">
+          <main className="nc-pad nc-state-page">
+            <h1 className="na-sr">Error</h1>
+            <ErrorState title="No se ha podido cargar tu clase" onRetry={clase.retry}>
+              {navigator.onLine ? 'El servidor no ha respondido bien. Vuelve a intentarlo en un momento.' : 'Estás sin conexión.'}
+            </ErrorState>
+          </main>
+        </div>
+      ) : (
+        <ErrorBoundary resetKey={path}>
+          <Suspense fallback={<LoadingState />}>
+            <Page {...params} key={path} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
       <div className="nc-bottomnav nc-only-mobile">
         <BottomNav active={section === 'asignaturas' ? null : section} />
       </div>
@@ -125,6 +144,7 @@ function skipToMain() {
 
 /* Hasta conectar el store a PocketBase, lo que se ve dentro es una clase de ejemplo: se dice, y se puede cerrar */
 function DemoNotice() {
+  const clase = useClase()
   const [hidden, setHidden] = useState(() => {
     try {
       return sessionStorage.getItem('nc-demo-hidden') === '1'
@@ -132,7 +152,7 @@ function DemoNotice() {
       return false
     }
   })
-  if (hidden) return null
+  if (hidden || clase.status === 'loading' || clase.status === 'none') return null
   function hide() {
     setHidden(true)
     try {
@@ -143,7 +163,23 @@ function DemoNotice() {
   }
   return (
     <aside className="nc-demo" aria-label="Aviso">
-      <span>Estás viendo una clase de ejemplo. Muy pronto podrás unirte a la tuya con su código.</span>
+      {clase.status === 'ready' ? (
+        <span>Horario, entregas y exámenes ya son los de tu clase. Las dudas y los apuntes todavía son de ejemplo.</span>
+      ) : (
+        <span>
+          Estás viendo una clase de ejemplo.
+          {clase.demo ? (
+            <>
+              {' '}
+              <button type="button" className="nc-demo-link" onClick={() => clase.showDemo(false)}>
+                Salir del ejemplo
+              </button>
+            </>
+          ) : (
+            ' Muy pronto podrás unirte a la tuya con su código.'
+          )}
+        </span>
+      )}
       <button type="button" aria-label="Cerrar aviso" onClick={hide}>
         ×
       </button>

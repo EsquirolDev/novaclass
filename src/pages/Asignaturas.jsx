@@ -15,7 +15,7 @@ export default function Asignaturas() {
         <div className="nc-top">
           <div>
             <h1 className="na-t-display-xl">Asignaturas</h1>
-            <p className="na-t-subtitle na-muted">Cinco módulos de 1.º DAW. Cada uno con su color, su forma y su código.</p>
+            <p className="na-t-subtitle na-muted">Las asignaturas de tu clase. Cada una con su color, su forma y su código.</p>
           </div>
         </div>
         <div className="nc-subjects">

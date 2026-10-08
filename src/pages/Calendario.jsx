@@ -1,17 +1,18 @@
 import { useRef, useState } from 'react'
 import { Button, EventChip, Icon, Pill, Sigil, SubjectTag, Tabs } from '../components/index.js'
-import { BREAK, SESSIONS } from '../data/seed.js'
 import { allModulesOn, MODULE_ORDER, subjectOf, subjectVars } from '../data/subjects.js'
 import { cx } from '../lib/cx.js'
 import { addDays, DOWS, isoDate, longDate, MONTHS_SHORT, monthTitle, parseDate, sameDay, startOfWeek } from '../lib/dates.js'
 import { useIsMobile } from '../lib/useMedia.js'
 import {
+  BREAK,
   blocksFor,
   classInfo,
   DAY_NAMES,
   DAY_SHORT,
   DAYS,
   dayEnd,
+  SESSIONS,
   teacherNames,
   toHours,
   totalHours,
@@ -19,9 +20,10 @@ import {
   weeklyHours,
 } from '../lib/schedule.js'
 import { chip } from '../state/selectors.js'
+import { useClase } from '../state/clase.jsx'
 import { useStore } from '../state/store.jsx'
 import CalendarioMovil from './CalendarioMovil.jsx'
-import { AgendaRow, ClassBlock, Detail, NowLine } from './CalendarioPartes.jsx'
+import { AgendaRow, ClassBlock, Detail, NowLine, SinHorario } from './CalendarioPartes.jsx'
 
 function query() {
   return new URLSearchParams(window.location.hash.split('?')[1] || '')
@@ -39,6 +41,7 @@ export default function Calendario() {
 
 function CalendarioEscritorio() {
   const { now, events } = useStore()
+  const clase = useClase()
   const fromLink = initialDate()
   const [view, setView] = useState(() => (query().get('v') === 'horario' ? 'horario' : 'mes'))
   const [ref, setRef] = useState(fromLink || now)
@@ -79,7 +82,7 @@ function CalendarioEscritorio() {
   const mon = startOfWeek(ref)
   const sun = addDays(mon, 6)
   const title = horario
-    ? 'Horario de 1.º DAW'
+    ? `Horario de ${clase.group?.name || '1.º DAW'}`
     : view === 'mes'
       ? monthTitle(ref)
       : `Semana del ${mon.getDate()}${mon.getMonth() !== sun.getMonth() ? ' ' + MONTHS_SHORT[mon.getMonth()] : ''} al ${sun.getDate()} ${MONTHS_SHORT[sun.getMonth()]}`
@@ -243,21 +246,22 @@ function WeekAgenda({ monday, now, events, sel, onSel }) {
   )
 }
 
-/* Horario semanal: filas = franjas, columnas = lunes a viernes. Datos de seed.js (SESSIONS, SCHEDULE). */
+/* Horario semanal: filas = franjas, columnas = lunes a viernes. Datos de la clase (lib/schedule.js). */
 function Horario({ now, active }) {
   const today = now.getDay()
   const h = now.getHours() + now.getMinutes() / 60
-  const row = i => (i <= BREAK.after ? i + 2 : i + 3)
+  const row = i => (!BREAK || i <= BREAK.after ? i + 2 : i + 3)
+  if (!totalHours()) return <SinHorario />
   return (
     <div className="nc-horario-wrap">
       <NowLine now={now} />
       <div className="nc-scroll-x">
-        <div className="nc-horario" role="group" aria-label="Horario semanal de DAW 26/27">
+        <div className="nc-horario" role="group" aria-label="Horario semanal">
           <div style={{ gridRow: 1, gridColumn: 1 }} />
           {DAYS.map(d => (
             <div key={d} aria-hidden="true" className={cx('hd', d === today && 'today')} style={{ gridRow: 1, gridColumn: d + 1 }}>
               {DAY_SHORT[d]}
-              <small>hasta {trim(dayEnd(d))}</small>
+              <small>{dayEnd(d) ? `hasta ${trim(dayEnd(d))}` : 'sin clase'}</small>
             </div>
           ))}
           {SESSIONS.map((s, i) => (
@@ -266,9 +270,11 @@ function Horario({ now, active }) {
               {trim(s.end)}
             </div>
           ))}
-          <div className="brkrow" style={{ gridRow: BREAK.after + 3, gridColumn: '1 / -1' }}>
-            {BREAK.label} · {BREAK.start}–{BREAK.end}
-          </div>
+          {BREAK ? (
+            <div className="brkrow" style={{ gridRow: BREAK.after + 3, gridColumn: '1 / -1' }}>
+              {BREAK.label} · {BREAK.start}–{BREAK.end}
+            </div>
+          ) : null}
           {DAYS.flatMap(d =>
             blocksFor(d, { free: true }).map(b => (
               <ClassBlock

@@ -97,7 +97,7 @@ export const PLAN = [
         id: 'store',
         title: 'Conectar el store a PocketBase',
         detail:
-          'SDK de PocketBase en vez de localStorage, con actualización optimista (marcar hecha, votar) y tiempo real en dudas. El tema puede seguir en local.',
+          'En cuatro partes. Hecha la (a): la clase sale de PocketBase (horario, Docentes, temas, entregas y exámenes con lo marcado), con selector si estás en varias y pantalla si no estás en ninguna. Faltan: (b) guardar hechas y notas, (c) dudas con tiempo real, (d) apuntes.',
       },
     ],
   },
