@@ -13,7 +13,7 @@ import { useStore } from '../state/store.jsx'
  */
 export default function Inicio() {
   const { user: auth } = useAuth()
-  const { now, events, dudas, apuntes, welcomed, setWelcomed, setDone } = useStore()
+  const { user, now, events, dudas, apuntes, welcomed, setWelcomed, setDone } = useStore()
   const pending = events.filter(e => e.type !== 'festivo' && !e.done && e.at > now)
   const next = nextUp(events, now)
   const after = pending.filter(e => e !== next).slice(0, 3)
@@ -26,7 +26,7 @@ export default function Inicio() {
     <div className="nc-screen">
       <main className="nc-home">
         <header className="nc-greet">
-          <p className="na-t-subtitle na-muted">Hola, {firstName(auth)}</p>
+          <p className="na-t-subtitle na-muted">Hola, {firstName(auth) || user}</p>
           <h1 className="na-t-display-xl nc-only-desktop">{todayLong(now)}</h1>
           <h1 className="na-t-display-xl nc-only-mobile">{todayShort(now)}</h1>
           <p className="na-t-subtitle nc-greet-summary">{weekSummary(week)}</p>

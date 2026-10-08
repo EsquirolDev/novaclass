@@ -9,7 +9,7 @@ npm run dev     # http://localhost:5173 (/api va a PocketBase en 127.0.0.1:8090)
 npm run build
 ```
 
-Para crear cuentas y entrar hace falta PocketBase en marcha (ver [`docs/backend.md`](docs/backend.md)). Si vive en otro sitio: `PB_DEV_URL=http://… npm run dev`. En producción, `VITE_PB_URL` si el backend no está en el mismo dominio.
+El login (portada, crear cuenta, entrar) está **apagado** hasta que el backend esté completo: la app se abre directamente con la clase de ejemplo. Se enciende con `VITE_AUTH=on` (en `.env.local` o al compilar; `src/lib/flags.js`). Con el login encendido hace falta PocketBase en marcha (ver [`docs/backend.md`](docs/backend.md)). Si vive en otro sitio: `PB_DEV_URL=http://… npm run dev`. En producción, `VITE_PB_URL` si el backend no está en el mismo dominio.
 
 ## Backend
 

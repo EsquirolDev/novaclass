@@ -92,6 +92,7 @@ export function BottomNav({ active, className }) {
 /* Avatar de quien ha entrado: abre un menú con su nombre, su correo y «Cerrar sesión» */
 function UserMenu({ size }) {
   const { user, logout } = useAuth()
+  const { user: demoUser } = useStore()
   const [open, setOpen] = useState(false)
   const box = useRef(null)
   useEffect(() => {
@@ -105,7 +106,8 @@ function UserMenu({ size }) {
       document.removeEventListener('keydown', esc)
     }
   }, [open])
-  if (!user) return null
+  /* Con el login apagado: el avatar de la persona de ejemplo, como antes */
+  if (!user) return <Avatar name={demoUser} me size={size} />
   const name = user.name || user.email
   return (
     <div className="nc-usermenu" ref={box}>

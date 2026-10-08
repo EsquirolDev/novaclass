@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AppBar, BottomNav, ErrorBoundary, LoadingState, OfflineBanner, TopBar } from './components/index.js'
 import { planFinished } from './data/plan.js'
+import { AUTH_ON } from './lib/flags.js'
 import { match, navigate, useRoute } from './lib/router.jsx'
 import Inicio from './pages/Inicio.jsx'
 import { Entrar, Recuperar, Registro } from './pages/publico/Cuenta.jsx'
@@ -43,11 +44,11 @@ function resolve(path) {
 /* Pantallas para quien no ha entrado */
 const PUBLIC = { '/': Landing, '/entrar': Entrar, '/registro': Registro, '/recuperar': Recuperar }
 
-/* Con sesión, la app; sin ella, la portada y las pantallas de cuenta */
+/* Con sesión, la app; sin ella, la portada y las pantallas de cuenta. Con el login apagado (AUTH_ON), siempre la app. */
 export default function App() {
   const { user } = useAuth()
   const path = useRoute()
-  return user ? <PrivateApp path={path} /> : <PublicApp path={path} />
+  return user || !AUTH_ON ? <PrivateApp path={path} /> : <PublicApp path={path} />
 }
 
 function PublicApp({ path }) {

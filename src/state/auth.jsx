@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { AUTH_ON } from '../lib/flags.js'
 import { pb } from '../lib/pb.js'
 
 /*
@@ -8,12 +9,12 @@ import { pb } from '../lib/pb.js'
 const Ctx = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => (pb.authStore.isValid ? pb.authStore.record : null))
+  const [user, setUser] = useState(() => (AUTH_ON && pb.authStore.isValid ? pb.authStore.record : null))
 
   useEffect(() => {
     const off = pb.authStore.onChange(() => setUser(pb.authStore.isValid ? pb.authStore.record : null))
     /* Al abrir la app, renueva el token (y descubre si la cuenta se borró o el token caducó) */
-    if (pb.authStore.isValid)
+    if (AUTH_ON && pb.authStore.isValid)
       pb.collection('users')
         .authRefresh()
         .catch(err => err?.status === 401 && pb.authStore.clear())
