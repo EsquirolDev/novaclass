@@ -4,7 +4,7 @@ import { planFinished } from './data/plan.js'
 import { AUTH_ON } from './lib/flags.js'
 import { match, navigate, useRoute } from './lib/router.jsx'
 import Inicio from './pages/Inicio.jsx'
-import { Entrar, Recuperar, Registro } from './pages/publico/Cuenta.jsx'
+import { CambiarClave, Entrar, Recuperar } from './pages/publico/Cuenta.jsx'
 import Landing from './pages/publico/Landing.jsx'
 import NoEncontrada from './pages/NoEncontrada.jsx'
 import SinClase from './pages/SinClase.jsx'
@@ -23,6 +23,7 @@ const DudaNueva = lazy(() => import('./pages/DudaNueva.jsx'))
 const Dudas = lazy(() => import('./pages/Dudas.jsx'))
 const Mejoras = lazy(() => import('./pages/Mejoras.jsx'))
 const TuClase = lazy(() => import('./pages/TuClase.jsx'))
+const Escuela = lazy(() => import('./pages/Escuela.jsx'))
 
 const ROUTES = [
   ['/', 'inicio', Inicio],
@@ -37,6 +38,7 @@ const ROUTES = [
   ['/apuntes/:id', 'apuntes', ApunteVer],
   ['/mejoras', null, Mejoras],
   ['/clase', null, TuClase],
+  ['/escuela', 'escuela', Escuela],
 ]
 
 function resolve(path) {
@@ -48,12 +50,14 @@ function resolve(path) {
 }
 
 /* Pantallas para quien no ha entrado */
-const PUBLIC = { '/': Landing, '/entrar': Entrar, '/registro': Registro, '/recuperar': Recuperar }
+const PUBLIC = { '/': Landing, '/entrar': Entrar, '/recuperar': Recuperar }
 
 /* Con sesión, la app; sin ella, la portada y las pantallas de cuenta. Con el login apagado (AUTH_ON), siempre la app. */
 export default function App() {
   const { user } = useAuth()
   const path = useRoute()
+  /* Con la contraseña temporal de la escuela, antes de nada hay que poner una propia */
+  if (user?.must_change_password) return <CambiarClave />
   return user || !AUTH_ON ? <PrivateApp path={path} /> : <PublicApp path={path} />
 }
 
@@ -68,7 +72,7 @@ function PublicApp({ path }) {
 function PrivateApp({ path }) {
   const route = path.split('?')[0]
   const publicOnly = route !== '/' && route in PUBLIC
-  /* Ya con sesión, /entrar o /registro llevan a Inicio */
+  /* Ya con sesión, /entrar lleva a Inicio */
   useEffect(() => {
     if (publicOnly) navigate('/')
   }, [publicOnly])
@@ -88,7 +92,7 @@ function PrivateApp({ path }) {
       {/* Mientras carga el curso, el esqueleto; sin curso, la pantalla que lo explica; si falla, reintentar */}
       {clase.status === 'loading' ? (
         <LoadingState label="Cargando tu clase…" />
-      ) : clase.status === 'none' ? (
+      ) : clase.status === 'none' && !(section === 'escuela' && clase.staffSchool) ? (
         <SinClase />
       ) : clase.status === 'error' ? (
         <div className="nc-screen">
@@ -107,7 +111,7 @@ function PrivateApp({ path }) {
         </ErrorBoundary>
       )}
       <div className="nc-bottomnav nc-only-mobile">
-        <BottomNav active={section === 'asignaturas' ? null : section} />
+        <BottomNav active={section === 'asignaturas' || section === 'escuela' ? null : section} />
       </div>
     </div>
   )

@@ -35,9 +35,9 @@ const ROLES = [
   {
     icon: 'book',
     title: 'Docentes y Tutor',
-    text: 'Publicáis entregas y exámenes una vez y llegan a toda la clase. El Tutor organiza la clase y sus cargos.',
+    text: 'Cada Docente abre el espacio de su asignatura y comparte su código; entregas y exámenes llegan a todo el curso. El Tutor organiza el curso y sus cargos.',
   },
-  { icon: 'school', title: 'Dirección', text: 'Crea la escuela y sus clases, y ve de un vistazo cómo va cada una.' },
+  { icon: 'school', title: 'Dirección', text: 'Da de alta las cuentas de toda la escuela de una vez, los cursos y el horario.' },
 ]
 
 /* Portada para quien aún no ha entrado: qué es NovaClass y cómo empezar */
@@ -57,11 +57,8 @@ export default function Landing() {
               vistazo.
             </p>
             <div className="nc-land-cta">
-              <Button variant="primary" size="lg" icon="plus" href={href('/registro')}>
-                Crear cuenta
-              </Button>
-              <Button variant="secondary" size="lg" href={href('/entrar')}>
-                Ya tengo cuenta
+              <Button variant="primary" size="lg" href={href('/entrar')}>
+                Entrar
               </Button>
             </div>
             <div className="nc-land-subjects" aria-label="Así se ven las asignaturas">
@@ -116,8 +113,8 @@ export default function Landing() {
               Tu escuela, verificada
             </h2>
             <p>
-              Cualquiera puede crear su escuela y abrir sus clases. Las escuelas comprobadas por NovaClass llevan el sello de verificada,
-              para que sepas que es la de verdad. Para entrar en tu clase solo necesitas su código.
+              Las cuentas las crea tu escuela: tu usuario lleva su nombre (scollp@santjosepobrer) y la primera vez pones tu contraseña. Las
+              escuelas comprobadas por NovaClass llevan el sello de verificada, para que sepas que es la de verdad.
             </p>
           </div>
         </section>
@@ -126,9 +123,9 @@ export default function Landing() {
           <h2 id="land-c" className="nc-land-h2">
             Empieza hoy
           </h2>
-          <p className="na-muted">Crear la cuenta lleva un minuto.</p>
-          <Button variant="primary" size="lg" icon="plus" href={href('/registro')}>
-            Crear cuenta
+          <p className="na-muted">Entra con el usuario que te ha dado tu escuela.</p>
+          <Button variant="primary" size="lg" href={href('/entrar')}>
+            Entrar
           </Button>
         </section>
       </main>

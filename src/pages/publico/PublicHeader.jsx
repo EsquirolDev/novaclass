@@ -1,7 +1,7 @@
 import { Button } from '../../components/index.js'
 import { href } from '../../lib/router.jsx'
 
-/* Barra de arriba para quien no ha entrado: marca y los dos caminos (entrar o crear cuenta) */
+/* Barra de arriba para quien no ha entrado: marca y entrar (las cuentas las da la escuela) */
 export function PublicHeader({ minimal }) {
   return (
     <header className="nc-pub-head">
@@ -11,11 +11,8 @@ export function PublicHeader({ minimal }) {
       </a>
       {minimal ? null : (
         <nav className="nc-pub-nav" aria-label="Cuenta">
-          <Button variant="ghost" href={href('/entrar')}>
+          <Button variant="primary" href={href('/entrar')}>
             Entrar
-          </Button>
-          <Button variant="primary" href={href('/registro')}>
-            Crear cuenta
           </Button>
         </nav>
       )}

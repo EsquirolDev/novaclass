@@ -129,7 +129,6 @@ describe.skipIf(!HAS_PB)('reglas de acceso (modelo v2)', () => {
         oldPassword: PASS,
         password: PASS + 'x',
         passwordConfirm: PASS + 'x',
-        must_change_password: false,
       })
       expect(res.ok).toBe(true)
       u.est2.as = await pb.loginWith('est2@test.local', PASS + 'x')

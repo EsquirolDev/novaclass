@@ -173,6 +173,12 @@ function UserMenu({ size }) {
               ) : null}
             </div>
           ) : null}
+          {clase.staffSchool ? (
+            <a className="nc-usermenu-link" href={href('/escuela')} onClick={() => setOpen(false)}>
+              <Icon name="users" size={18} />
+              Cuentas de la escuela
+            </a>
+          ) : null}
           <Button variant="secondary" icon="logout" block onClick={logout}>
             Cerrar sesión
           </Button>

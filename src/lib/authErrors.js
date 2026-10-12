@@ -1,4 +1,4 @@
-/* Errores de PocketBase → mensajes en español, por campo y en general. Sin decir si un correo existe o no al entrar. */
+/* Errores de PocketBase → mensajes en español, por campo y en general. Sin decir si una cuenta existe o no al entrar. */
 
 const FIELD = {
   validation_not_unique: { email: 'Ya hay una cuenta con este correo. ¿Quieres entrar?' },
@@ -12,18 +12,19 @@ const FIELD = {
   validation_min_text_constraint: { password: 'La contraseña necesita al menos 8 caracteres.' },
   validation_length_out_of_range: { password: 'La contraseña necesita al menos 8 caracteres.' },
   validation_values_mismatch: { passwordConfirm: 'Las contraseñas no coinciden.' },
+  validation_invalid_old_password: { oldPassword: 'La contraseña actual no es correcta.' },
 }
 
 /*
- * `mode`: 'login' | 'register' | 'reset'. Devuelve { form, fields } con un mensaje general y otro por campo.
- * Al entrar, cualquier 400 es «correo o contraseña incorrectos» (no se distingue cuál de los dos falla).
+ * `mode`: 'login' | 'change' | 'reset'. Devuelve { form, fields } con un mensaje general y otro por campo.
+ * Al entrar, cualquier 400 es «usuario o contraseña incorrectos» (no se distingue cuál de los dos falla).
  */
 export function authError(err, mode) {
   const status = err?.status ?? 0
   if (status === 0) return { form: 'No se puede conectar con el servidor. Revisa tu conexión y vuelve a intentarlo.', fields: {} }
   if (status === 429) return { form: 'Demasiados intentos seguidos. Espera un momento y vuelve a probar.', fields: {} }
   if (mode === 'login' && (status === 400 || status === 401 || status === 404)) {
-    return { form: 'Correo o contraseña incorrectos.', fields: {} }
+    return { form: 'Usuario o contraseña incorrectos.', fields: {} }
   }
   const data = err?.response?.data || err?.data?.data || {}
   const fields = {}
@@ -36,11 +37,11 @@ export function authError(err, mode) {
   return { form: 'Algo ha fallado. Vuelve a intentarlo en un momento.', fields: {} }
 }
 
-/* Validación en el navegador antes de enviar (la de verdad la hace PocketBase) */
-export function checkRegister({ name, email, password }) {
+/* Contraseña nueva (al entrar con la temporal): comprobación en el navegador antes de enviar */
+export function checkNewPassword({ old, password }) {
   const fields = {}
-  if (name.trim().length < 2) fields.name = 'Escribe tu nombre y apellidos.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) fields.email = 'Ese correo no parece válido.'
+  if (!old) fields.oldPassword = 'Escribe la contraseña con la que has entrado.'
   if (password.length < 8) fields.password = 'La contraseña necesita al menos 8 caracteres.'
+  else if (password === old) fields.password = 'Tiene que ser distinta de la temporal.'
   return fields
 }

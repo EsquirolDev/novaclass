@@ -73,7 +73,7 @@ Cada uno ve a la gente, los cursos, el horario y los festivos de su escuela, y n
 ## Fases
 
 1. **Hecho.** Modelo nuevo, reglas, hooks y tests; Sant Josep Obrer pasado al modelo (migraciones `1791500400_modelo_v2.js` y `1791500500_reglas_docentes.js`). La app carga el curso, colores y formas por asignatura, y se entra en cada asignatura con su código.
-2. Cuentas creadas por la escuela (una o una lista), entrar con `usuario@escuela`, cambio de contraseña obligatorio, reseteo por el Tutor. Se quita el registro libre.
+2. **Hecho.** Cuentas creadas por la escuela (una o una lista) en «Cuentas de la escuela», entrar con `usuario@escuela`, cambio de contraseña obligatorio la primera vez, contraseña nueva por la dirección o el Tutor, NIA para la dirección y el Tutor. Sin registro libre (`pb_hooks/cuentas.pb.js`, migración `1791500600_cuentas.js`).
 3. El Docente crea el espacio de su asignatura (etiqueta con color y forma) y comparte el código.
 4. La dirección monta el horario desde la app.
 5. Bajas.

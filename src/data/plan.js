@@ -117,7 +117,7 @@ export const PLAN = [
         id: 'login',
         title: 'Inicio de sesión',
         detail:
-          'Hecho y encendido (VITE_AUTH=off lo apaga): entrar con correo o con usuario@escuela, salir y pedir el enlace de recuperación. Falta: configurar el correo (SMTP). El registro libre se quita en la fase 2.',
+          'Hecho y encendido (VITE_AUTH=off lo apaga): entrar con usuario@escuela o con correo, salir y pedir el enlace de recuperación. Sin registro libre. Falta: configurar el correo (SMTP).',
       },
       {
         id: 'modelo-v2',
@@ -137,7 +137,8 @@ export const PLAN = [
         id: 'cuentas-escuela',
         title: 'Fase 2: cuentas creadas por la escuela',
         detail:
-          'Alta de una persona o de una lista (nombre, apellidos, NIA y curso) con usuario@escuela automático y contraseña temporal que se cambia al entrar; reseteo por el Tutor; correo de recuperación opcional. Sin registro libre.',
+          'Hecho: «Cuentas de la escuela» para la dirección, con alta de una persona o de una lista pegada (nombre, apellidos, NIA y curso), usuario@escuela automático y contraseña temporal que se copia o se imprime. Cambio obligatorio al entrar; contraseña nueva por la dirección o el Tutor. Falta: correo de recuperación opcional (con SMTP).',
+        done: true,
       },
       {
         id: 'espacio',

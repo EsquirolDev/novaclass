@@ -52,6 +52,7 @@ export default [
         $app: 'readonly',
         onRecordAfterCreateSuccess: 'readonly',
         onRecordValidate: 'readonly',
+        onRecordUpdateRequest: 'readonly',
         BadRequestError: 'readonly',
         ValidationError: 'readonly',
       },

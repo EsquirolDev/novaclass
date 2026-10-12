@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Avatar, Button, Card, ConfirmDialog, Icon, JoinForm, SubjectTag } from '../components/index.js'
+import { Avatar, Button, Card, ConfirmDialog, Icon, JoinForm, PasswordReset, SubjectTag } from '../components/index.js'
 import { formatCode } from '../lib/codes.js'
+import { pb } from '../lib/pb.js'
 import { useAuth } from '../state/auth.jsx'
 import { useClase } from '../state/clase.jsx'
 
@@ -15,6 +16,9 @@ export default function TuClase() {
   const clase = useClase()
   const { user } = useAuth()
   const { curso, school, people, me, asignaturas = [], locked = [] } = clase
+  /* El Tutor y la dirección ven el NIA del alumnado y le dan contraseña nueva si la olvida */
+  const manage = !!(me?.cargo === 'tutor' || me?.director)
+  const nias = useNias(curso?.id, manage)
   if (!curso || !people) return null
   const byCargo = list => [...list].sort((a, b) => (a.cargo ? 0 : 1) - (b.cargo ? 0 : 1))
   const docentes = byCargo(people.docentes)
@@ -38,7 +42,7 @@ export default function TuClase() {
         <div className="nc-clase-grid">
           <div className="nc-clase-people">
             <PeopleCard title="Docentes" list={docentes} />
-            <PeopleCard title="Estudiantes" list={estudiantes} />
+            <PeopleCard title="Estudiantes" list={estudiantes} manage={manage} nias={nias} />
           </div>
           <aside className="nc-side">
             {withCode.length ? (
@@ -74,7 +78,23 @@ export default function TuClase() {
   )
 }
 
-function PeopleCard({ title, list }) {
+function useNias(cursoId, on) {
+  const [nias, setNias] = useState({})
+  useEffect(() => {
+    if (!cursoId || !on) return undefined
+    let alive = true
+    pb.send(`/api/novaclass/cursos/${cursoId}/nias`, { method: 'GET' }).then(
+      n => alive && setNias(n),
+      () => {},
+    )
+    return () => {
+      alive = false
+    }
+  }, [cursoId, on])
+  return nias
+}
+
+function PeopleCard({ title, list, manage, nias = {} }) {
   return (
     <Card title={`${title} · ${list.length}`}>
       {list.length ? (
@@ -85,8 +105,10 @@ function PeopleCard({ title, list }) {
               <span className="nm">
                 {p.name}
                 {p.codes?.length ? <small>{p.codes.join(' · ')}</small> : null}
+                {manage && nias[p.id] ? <small>NIA {nias[p.id]}</small> : null}
               </span>
               {p.cargo ? <span className="nc-cargo">{CARGO[p.cargo]}</span> : null}
+              {manage ? <PasswordReset person={p} compact /> : null}
             </li>
           ))}
         </ul>

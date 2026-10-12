@@ -63,10 +63,20 @@ PocketBase vigila `pb_hooks`: al cambiar un hook se reinicia solo y aplica las m
 
 Encendidas. `VITE_AUTH=off` las apaga: la app se abre sin login y con la clase de ejemplo.
 
-- **Entrada:** con el correo o con el usuario de la escuela (`scollp@santjosepobrer`) y la contraseña (mínimo 8 caracteres), desde `#/entrar`. Las cuentas las crea la escuela ([`escuelas.md`](escuelas.md)); la pantalla de registro de la app desaparece en la fase 2, y PocketBase ya no deja crear cuentas desde fuera.
+- **Entrada:** con el usuario de la escuela (`scollp@santjosepobrer`) o con el correo, y la contraseña (mínimo 8 caracteres), desde `#/entrar`. No hay registro: PocketBase no deja crear cuentas desde fuera y la app no tiene pantalla para ello.
+- **Alta:** la dirección, desde «Cuentas de la escuela» (`#/escuela`, en el menú de la cuenta): una persona o una lista pegada desde una hoja de cálculo (`src/lib/cuentas.js`). Las cuentas nuevas salen una sola vez con su contraseña temporal, para copiarlas o imprimirlas.
+- **Primera vez:** con `must_change_password`, la app enseña «Pon tu contraseña» en lugar de todo lo demás. Al cambiarla, el hook la marca como cambiada; a mano no se puede quitar. PocketBase cierra las sesiones al cambiar la contraseña, así que la app vuelve a entrar con la nueva.
+- **Olvido:** la dirección (a cualquiera de la escuela) o el Tutor (a su alumnado) dan una contraseña temporal nueva, desde «Cuentas de la escuela» o «Tu clase». Se cierran sus sesiones abiertas.
+- **NIA:** oculto en la API. Lo ven la dirección y el Tutor del curso por su ruta.
 - **Sesión:** PocketBase guarda el token en `localStorage` y se renueva al abrir la app.
 - **Errores:** los mensajes van en español (`src/lib/authErrors.js`). Al entrar no se dice si la cuenta existe.
-- **Recuperar la contraseña:** responde siempre igual, exista o no la cuenta. Para que el correo llegue de verdad hay que configurar SMTP en el panel (Settings → Mail settings), y está pendiente.
+- **Recuperar por correo:** solo para cuentas con correo, y responde siempre igual. Para que el correo llegue de verdad hay que configurar SMTP en el panel (Settings → Mail settings), y está pendiente.
+
+Rutas (`pb_hooks/cuentas.pb.js`):
+
+- `POST /api/novaclass/cuentas` `{ people: [{ nombre, apellidos, nia, role, curso }] }`: solo la dirección, en su escuela. Comprueba todas las filas (nombre, apellidos, rol, curso de la escuela, NIA sin repetir) y, si alguna falla, no crea ninguna y devuelve el error de cada fila (`data.rows`). Crea las cuentas en una transacción, con `usuario@escuela` (si ya existe, `scollp2`), contraseña temporal de 10 caracteres sin letras que se confundan, y el alumnado en su curso.
+- `POST /api/novaclass/cuentas/{id}/clave`: contraseña temporal nueva.
+- `GET /api/novaclass/cursos/{id}/nias`: el NIA del alumnado de un curso.
 
 ## Modelo
 
@@ -105,7 +115,7 @@ Rutas propias (`pb_hooks/clases.pb.js`), porque el código está oculto en la AP
 
 - Sant Josep Obrer (verificada, `santjosepobrer`)
 - 1.º DAW A, con sus franjas y el patio
-- sus 10 Docentes como cuentas de la escuela (`mmolinar@santjosepobrer`…), con una contraseña al azar que nadie conoce: la dirección les dará acceso en la fase 2
+- sus 10 Docentes como cuentas de la escuela (`mmolinar@santjosepobrer`…), con una contraseña al azar que nadie conoce: la dirección les da una temporal desde «Cuentas de la escuela»
 - las 8 asignaturas con su color, su forma y sus Docentes; PRO, BD, LMSGI, SI y ED con el espacio abierto
 - las 31 franjas del horario
 

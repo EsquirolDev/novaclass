@@ -1,11 +1,15 @@
 import { useId, useState } from 'react'
 import { Button, Icon } from '../../components/index.js'
-import { authError, checkRegister } from '../../lib/authErrors.js'
+import { authError, checkNewPassword } from '../../lib/authErrors.js'
+import { firstName } from '../../lib/users.js'
 import { href, navigate } from '../../lib/router.jsx'
 import { useAuth } from '../../state/auth.jsx'
 import { PublicHeader } from './PublicHeader.jsx'
 
-/* Pantallas de cuenta: entrar, crear cuenta y recuperar la contraseña. Mismo esqueleto y mismos campos. */
+/*
+ * Pantallas de cuenta: entrar, recuperar la contraseña y cambiar la temporal. Mismo esqueleto y mismos campos. No hay
+ * registro: las cuentas las crea la escuela.
+ */
 
 function AuthLayout({ title, lead, children, foot }) {
   return (
@@ -85,18 +89,18 @@ function FormError({ children }) {
 export function Entrar({ next }) {
   const { login } = useAuth()
   const id = useId()
-  const [email, setEmail] = useState('')
+  const [identity, setIdentity] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
 
   async function submit(e) {
     e.preventDefault()
-    if (!email.trim() || !password) return setErr({ form: 'Escribe tu correo y tu contraseña.', fields: {} })
+    if (!identity.trim() || !password) return setErr({ form: 'Escribe tu usuario y tu contraseña.', fields: {} })
     setBusy(true)
     setErr(null)
     try {
-      await login(email, password)
+      await login(identity, password)
       navigate(next || '/')
     } catch (error) {
       setErr(authError(error, 'login'))
@@ -107,17 +111,22 @@ export function Entrar({ next }) {
   return (
     <AuthLayout
       title="Entrar"
-      lead={next ? 'Entra con tu cuenta para ver esa página.' : 'Hola de nuevo.'}
-      foot={
-        <>
-          ¿Aún no tienes cuenta? <a href={href('/registro')}>Crear cuenta</a>
-        </>
-      }
+      lead={next ? 'Entra con tu cuenta para ver esa página.' : 'Con el usuario y la contraseña que te ha dado tu escuela.'}
+      foot="¿Aún no tienes cuenta? Te la da tu escuela: pregunta a tu Tutor o en secretaría."
     >
       <form className="nc-auth-form" onSubmit={submit} noValidate>
         <FormError>{err?.form}</FormError>
-        <Field label="Correo" id={id + 'e'}>
-          <TextInput id={id + 'e'} type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} autoFocus />
+        <Field label="Usuario o correo" id={id + 'e'} hint="Por ejemplo, scollp@santjosepobrer">
+          <TextInput
+            id={id + 'e'}
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={identity}
+            onChange={e => setIdentity(e.target.value)}
+            hint="Por ejemplo, scollp@santjosepobrer"
+            autoFocus
+          />
         </Field>
         <Field label="Contraseña" id={id + 'p'}>
           <PasswordInput id={id + 'p'} autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} />
@@ -133,26 +142,28 @@ export function Entrar({ next }) {
   )
 }
 
-export function Registro() {
-  const { register } = useAuth()
+/*
+ * Primera vez con la contraseña temporal de la escuela (o una que ha dado el Tutor): hay que poner una propia antes de
+ * seguir. Sale en lugar de la app mientras users.must_change_password esté a true.
+ */
+export function CambiarClave() {
+  const { user, changePassword, logout } = useAuth()
   const id = useId()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [old, setOld] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
 
   async function submit(e) {
     e.preventDefault()
-    const fields = checkRegister({ name, email, password })
+    const fields = checkNewPassword({ old, password })
     if (Object.keys(fields).length) return setErr({ form: null, fields })
     setBusy(true)
     setErr(null)
     try {
-      await register({ name, email, password })
-      navigate('/')
+      await changePassword(old, password)
     } catch (error) {
-      setErr(authError(error, 'register'))
+      setErr(authError(error, 'change'))
       setBusy(false)
     }
   }
@@ -160,50 +171,43 @@ export function Registro() {
 
   return (
     <AuthLayout
-      title="Crear cuenta"
-      lead="Con tu cuenta podrás entrar en tu clase con su código, o crear tu escuela."
+      title="Pon tu contraseña"
+      lead={`Hola, ${firstName(user)}. Has entrado con una contraseña temporal: cámbiala por una tuya para seguir.`}
       foot={
-        <>
-          ¿Ya tienes cuenta? <a href={href('/entrar')}>Entrar</a>
-        </>
+        <button type="button" className="nc-auth-linkbtn" onClick={logout}>
+          Cerrar sesión
+        </button>
       }
     >
       <form className="nc-auth-form" onSubmit={submit} noValidate>
         <FormError>{err?.form}</FormError>
-        <Field label="Nombre y apellidos" id={id + 'n'} error={f.name} hint="Así te verá tu clase.">
-          <TextInput
-            id={id + 'n'}
-            autoComplete="name"
-            value={name}
-            maxLength={120}
-            onChange={e => setName(e.target.value)}
-            error={f.name}
-            hint="Así te verá tu clase."
+        {user?.username ? (
+          <p className="nc-auth-user">
+            Tu usuario: <b>{user.username}</b>
+          </p>
+        ) : null}
+        <Field label="Contraseña temporal" id={id + 'o'} error={f.oldPassword}>
+          <PasswordInput
+            id={id + 'o'}
+            autoComplete="current-password"
+            value={old}
+            onChange={e => setOld(e.target.value)}
+            error={f.oldPassword}
             autoFocus
           />
         </Field>
-        <Field label="Correo" id={id + 'e'} error={f.email}>
-          <TextInput
-            id={id + 'e'}
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            error={f.email}
-          />
-        </Field>
-        <Field label="Contraseña" id={id + 'p'} error={f.password} hint="Al menos 8 caracteres.">
+        <Field label="Contraseña nueva" id={id + 'p'} error={f.password} hint="Al menos 8 caracteres. Solo la sabrás tú.">
           <PasswordInput
             id={id + 'p'}
             autoComplete="new-password"
             value={password}
             onChange={e => setPassword(e.target.value)}
             error={f.password}
-            hint="Al menos 8 caracteres."
+            hint="Al menos 8 caracteres. Solo la sabrás tú."
           />
         </Field>
         <Button variant="primary" size="lg" block type="submit" disabled={busy}>
-          {busy ? 'Creando la cuenta…' : 'Crear cuenta'}
+          {busy ? 'Guardando…' : 'Guardar y entrar'}
         </Button>
       </form>
     </AuthLayout>
@@ -235,7 +239,7 @@ export function Recuperar() {
   return (
     <AuthLayout
       title="Recuperar contraseña"
-      lead="Te enviamos un enlace para crear una contraseña nueva."
+      lead="Si entras con el usuario de tu escuela, pide una contraseña nueva a tu Tutor o a la dirección. Si tu cuenta tiene correo, te enviamos un enlace."
       foot={<a href={href('/entrar')}>Volver a entrar</a>}
     >
       {sent ? (

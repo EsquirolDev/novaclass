@@ -117,7 +117,7 @@ export function ClaseProvider({ children }) {
         if (!cursos.length) {
           setHorario()
           setSubjects([])
-          setState({ status: 'none', cursos })
+          setState({ status: 'none', cursos, staffSchool: [...staffOf][0] || null })
           return
         }
         const curso = cursos.find(c => c.id === current) || cursos[0]
@@ -127,7 +127,8 @@ export function ClaseProvider({ children }) {
         setHorario(data.horario)
         setSubjects(data.subjects)
         statusIds.current = data.statusIds
-        setState({ status: 'ready', cursos, curso, school: curso.expand?.school || null, ...data })
+        /* staffSchool: la escuela de la que es dirección (para «Cuentas de la escuela»), aunque no tenga cursos */
+        setState({ status: 'ready', cursos, curso, school: curso.expand?.school || null, staffSchool: [...staffOf][0] || null, ...data })
       } catch (error) {
         if (!cancelled) setState(s => ({ ...s, status: 'error', error }))
       }
